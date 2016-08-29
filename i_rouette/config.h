@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include "ds3231.h"
 
+
+#define SERIAL_DEBUG
+
 // Pins Assignement
 #define _A0_PIN             A0
 #define RAIN_PIN            A1
@@ -50,7 +53,6 @@
 #define HEADING_MECHANICAL_CORRECTION (float)((-62)*PI/180)
 
 
-//#define SERIAL_DEBUG
 
 
 enum OperatingMode {
@@ -128,5 +130,20 @@ struct ParamValues {
 #define INDEX_VCC_LIGHT   11
 #define INDEX_VCC_RADIO   12
 #define INDEX_PARAM_MAX   INDEX_VCC_RADIO
+
+
+// Define where debug output will be printed.
+#define DEBUG_PRINTER SoftSerialDebug
+
+// Setup debug printing macros.
+#ifdef SERIAL_DEBUG
+#include <SoftwareSerial.h>
+extern SoftwareSerial SoftSerialDebug;
+#define DEBUG_PRINT(...) { DEBUG_PRINTER.print(__VA_ARGS__); }
+#define DEBUG_PRINTLN(...) { DEBUG_PRINTER.println(__VA_ARGS__); }
+#else
+#define DEBUG_PRINT(...) {}
+#define DEBUG_PRINTLN(...) {}
+#endif
 
 #endif

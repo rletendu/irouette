@@ -5,20 +5,17 @@
 #include "my_sensors.h"
 
 
-
 DHT dht(DHT_PIN, DHT22);
 SFE_BMP180 pressure;
 HMC5883L compass;
 
 
-
-
 void sensors_init() {
   pressure.begin();
   dht.begin();
-  compass = HMC5883L(); //new instance of HMC5883L library
-  compass.SetScale(1.3); //Set the scale of the compass.
-  compass.SetMeasurementMode(Measurement_Continuous); // Set the measurement mode to Continuous
+  compass = HMC5883L();
+  compass.SetScale(1.3);
+  compass.SetMeasurementMode(Measurement_Continuous);
 }
 
 void sensors_update(struct SensorValues *val, int speed_measure_time) {
@@ -28,16 +25,18 @@ void sensors_update(struct SensorValues *val, int speed_measure_time) {
   unsigned long start_time, end_time;
   start_time = millis();
 
-
-
   TCCR1B = 0x6;
   end_time = millis() + 1000 * speed_measure_time;
-
 
   sensors_init();
 
   val->vbat = (2.5 * 1024) / analogRead(REF25_PIN);
+  val->vbat = (2.5 * 1024) / analogRead(REF25_PIN);
+  
   val->lum = analogRead(LDR_PIN);
+  val->lum = analogRead(LDR_PIN);
+  
+  val->rain = analogRead(RAIN_PIN);
   val->rain = analogRead(RAIN_PIN);
 
   status = pressure.startTemperature();
