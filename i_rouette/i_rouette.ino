@@ -28,8 +28,8 @@ SoftwareSerial DEBUG_PRINTER(0, DBG_TX_PIN); // RX, TX
 
 ISR(BADISR_vect)
 {
-    led_tail(true);
-    while (1);
+  led_tail(true);
+  while (1);
 }
 
 void setup() {
@@ -50,6 +50,8 @@ void setup() {
   param.rpm_measure_time = DEFAULT_RPM_MEASURE_TIME;
   param.vcc_light_min = DEFAULT_VBAT_LIGHT_MIN;
   param.vcc_radio_min = DEFAULT_VBAT_RADIO_MIN;
+  param.rpm_2_ms = DEFAULT_RPM_2_MS;
+    debug_param();
 
   sensor_enable(true);
   rtc_init();
@@ -70,11 +72,12 @@ void setup() {
     rtc_set_time(&rtc_time);
     rtc_get_time(&rtc_time);
   }
-  sensors_update(&sensors_val, param.rpm_measure_time);
+  sensors_update(&sensors_val, param.rpm_measure_time, param.rpm_2_ms);
   rtc_ack_alarm();
   rtc_next_alarm(param.sleep_period);
   sensor_enable(false);
   debug_sensors();
+  debug_param();
 
 }
 
@@ -88,6 +91,10 @@ void rtc_wakeUp()
 
 void loop()
 {
+
+#ifdef DEBUG_SENSOR_ONLY
+  debug_loop();
+#endif
   time_minute = 60 * rtc_time.hour + rtc_time.min;
   // Compute operating mode
   if (time_minute > param.sunset_time || time_minute < param.sunrise_time) {
@@ -135,7 +142,7 @@ void loop()
     DEBUG_PRINTLN(F("-Sensors Update"));
     sensor_enable(true);
     rtc_get_time(&rtc_time);
-    sensors_update(&sensors_val, param.rpm_measure_time);
+    sensors_update(&sensors_val, param.rpm_measure_time, param.rpm_2_ms);
     rtc_ack_alarm();
     rtc_next_alarm(param.sleep_period);
     sensor_enable(false);
@@ -231,6 +238,7 @@ bool parse_rx_frame(void)
     return false;
   }
 
+  DEBUG_PRINT(F("Rx Frame ")); DEBUG_PRINTLN(buff);
   nb_sep = 0;
   for (i = 0; i < BUFF_MAX; i++) {
     if (buff[i] == 0) {
@@ -254,7 +262,7 @@ bool parse_rx_frame(void)
   server_time.sec = atoi(&buff[sep[INDEX_SEC] + 1]);
   server_time_minute = server_time.min + 60 * server_time.hour;
 
-  
+
   rtc_get_time(&rtc_time);
   time_minute = 60 * rtc_time.hour + rtc_time.min;
   if ( abs(time_minute - server_time_minute) > RTC_MAX_DEVIATION) {
@@ -264,7 +272,7 @@ bool parse_rx_frame(void)
     rtc_ack_alarm();
     rtc_next_alarm(param.sleep_period);
   }
-  
+
   param.night_mode_lum = atoi(&buff[sep[INDEX_NIGHT_LUM] + 1]);
   param.sleep_period = atoi(&buff[sep[INDEX_SLEEP_TIME] + 1]);
   param.sunset_time = atoi(&buff[sep[INDEX_SUNSET] + 1]);
@@ -272,6 +280,7 @@ bool parse_rx_frame(void)
   param.rpm_measure_time = atoi(&buff[sep[INDEX_RPM_TIME] + 1]);
   param.vcc_light_min = atof(&buff[sep[INDEX_VCC_LIGHT] + 1]);
   param.vcc_radio_min = atof(&buff[sep[INDEX_VCC_RADIO] + 1]);
+  param.rpm_2_ms = atof(&buff[sep[INDEX_RPM_2_MS] + 1]);
   debug_param();
   DEBUG_PRINTLN(F("Param OK"));
   return true;
@@ -318,4 +327,20 @@ void debug_param(void)
   DEBUG_PRINT(F("\trpm_measure_time: ")); DEBUG_PRINTLN(param.rpm_measure_time);
   DEBUG_PRINT(F("\tvcc_light_min: ")); DEBUG_PRINTLN(param.vcc_light_min, 2);
   DEBUG_PRINT(F("\tvcc_radio_min: ")); DEBUG_PRINTLN(param.vcc_radio_min, 2);
+  DEBUG_PRINT(F("\trpm_to_ms: ")); DEBUG_PRINTLN(param.rpm_2_ms, 2);
 }
+
+void debug_loop(void) {
+  while (1) {
+
+    sensor_enable(true);
+    rtc_get_time(&rtc_time);
+    sensors_update(&sensors_val, 2, param.rpm_2_ms);
+    debug_sensors();
+    sensor_enable(false);
+
+    delay(1000);
+
+  }
+}
+

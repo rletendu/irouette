@@ -37,6 +37,7 @@
 #define IDX_VAR_NIGHT_LUM  10
 #define IDX_VAR_VCC_LIGHT  11
 #define IDX_VAR_VCC_RADIO  12
+#define IDX_VAR_RPM_2MS    13
 
 
 // Data Frame Indexes
@@ -73,7 +74,8 @@
 #define INDEX_RPM_TIME    10
 #define INDEX_VCC_LIGHT   11
 #define INDEX_VCC_RADIO   12
-#define INDEX_PARAM_MAX   INDEX_VCC_RADIO
+#define INDEX_RPM_2_MS    13
+#define INDEX_PARAM_MAX   INDEX_RPM_2_MS
 
 #endif
 

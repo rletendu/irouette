@@ -193,6 +193,8 @@ bool build_param_frame(void)
   char var_rpm_time[8];
   char var_vcc_light[8];
   char var_vcc_radio[8];
+  char var_rpm_2_ms[8];
+  
   uint8_t i;
   char c;
   uint16_t t_rise;
@@ -264,7 +266,14 @@ bool build_param_frame(void)
     return false;
   }
 
-  snprintf(&buff[21], BUFF_MAX - 19, "|%s|%s|%d|%d|%s|%s|%s", var_night_lum, var_sleep_time, t_rise, t_set, var_rpm_time, var_vcc_light, var_vcc_radio);
+  for (i = 0; i < sizeof(var_rpm_2_ms); i++) {
+    var_rpm_2_ms[i] = 0;
+  }
+  if (domo.get_variable(IDX_VAR_RPM_2MS, var_rpm_2_ms) == false) {
+    return false;
+  }
+
+  snprintf(&buff[21], BUFF_MAX - 19, "|%s|%s|%d|%d|%s|%s|%s|%s", var_night_lum, var_sleep_time, t_rise, t_set, var_rpm_time, var_vcc_light, var_vcc_radio, var_rpm_2_ms);
   return true;
 }
 

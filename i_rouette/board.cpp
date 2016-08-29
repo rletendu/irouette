@@ -52,6 +52,7 @@ void board_init(void)
   pinMode(WAKEUP_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
 
+
   // Timer 1 will be used for couting RPM wind speed, disabling its default arduino PWM usage
   TCCR1B = 0x0;
   TCNT1 = 0;

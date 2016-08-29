@@ -18,7 +18,7 @@ void sensors_init() {
   compass.SetMeasurementMode(Measurement_Continuous);
 }
 
-void sensors_update(struct SensorValues *val, int speed_measure_time) {
+void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_2_ms) {
   char status;
   double int_temperature, int_pressure;
   float heading;
@@ -73,7 +73,7 @@ void sensors_update(struct SensorValues *val, int speed_measure_time) {
 
   while (millis() < end_time) {
   }
-  val->wind_speed = TCNT1 * (60 / speed_measure_time);
+  val->wind_speed = TCNT1 * (60 / speed_measure_time) * rpm_2_ms;
   TCCR1B = 0x0; TCNT1 = 0;
 }
 

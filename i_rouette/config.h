@@ -6,6 +6,7 @@
 
 
 #define SERIAL_DEBUG
+//#define DEBUG_SENSOR_ONLY
 
 // Pins Assignement
 #define _A0_PIN             A0
@@ -49,6 +50,7 @@
 #define DEFAULT_RPM_MEASURE_TIME 5
 #define DEFAULT_VBAT_LIGHT_MIN   3.5
 #define DEFAULT_VBAT_RADIO_MIN   3.3
+#define DEFAULT_RPM_2_MS         1.25
 
 #define HEADING_MECHANICAL_CORRECTION (float)((-62)*PI/180)
 
@@ -82,13 +84,14 @@ struct SensorValues {
 
 struct ParamValues {
   uint16_t  valid_sig;
-  uint8_t   night_mode_lum;
+  uint16_t   night_mode_lum;
   uint8_t   sleep_period;
   uint16_t  sunset_time;
   uint16_t  sunrise_time;
   uint8_t   rpm_measure_time;
   float     vcc_light_min;
   float     vcc_radio_min;
+  float     rpm_2_ms;
 };
 
 #define TIMEOUT_CONNECT 20*1000
@@ -129,7 +132,8 @@ struct ParamValues {
 #define INDEX_RPM_TIME    10
 #define INDEX_VCC_LIGHT   11
 #define INDEX_VCC_RADIO   12
-#define INDEX_PARAM_MAX   INDEX_VCC_RADIO
+#define INDEX_RPM_2_MS    13
+#define INDEX_PARAM_MAX   INDEX_RPM_2_MS
 
 
 // Define where debug output will be printed.
