@@ -1,5 +1,6 @@
 #include "config.h"
 #include "board.h"
+#include "protocol.h"
 #include "my_sensors.h"
 #include "rtc.h"
 #include "radio.h"
@@ -51,7 +52,7 @@ void setup() {
   param.vcc_light_min = DEFAULT_VBAT_LIGHT_MIN;
   param.vcc_radio_min = DEFAULT_VBAT_RADIO_MIN;
   param.rpm_2_ms = DEFAULT_RPM_2_MS;
-    debug_param();
+  debug_param();
 
   sensor_enable(true);
   rtc_init();
@@ -72,13 +73,8 @@ void setup() {
     rtc_set_time(&rtc_time);
     rtc_get_time(&rtc_time);
   }
-  sensors_update(&sensors_val, param.rpm_measure_time, param.rpm_2_ms);
-  rtc_ack_alarm();
-  rtc_next_alarm(param.sleep_period);
   sensor_enable(false);
-  debug_sensors();
-  debug_param();
-
+  rtc_wake = true; // Force rtc wake for first loop
 }
 
 void rtc_wakeUp()
@@ -95,6 +91,32 @@ void loop()
 #ifdef DEBUG_SENSOR_ONLY
   debug_loop();
 #endif
+
+  if (rtc_wake) {
+    DEBUG_PRINTLN(F("- Wakeup !"));
+    rtc_wake = false;
+    charge_status = get_charge_status();
+    DEBUG_PRINTLN(F("-Sensors Update"));
+    sensor_enable(true);
+    rtc_get_time(&rtc_time);
+    sensors_update(&sensors_val, param.rpm_measure_time, param.rpm_2_ms);
+    sensor_enable(false);
+
+    debug_sensors();
+    if (sensors_val.vbat > param.vcc_radio_min) {
+      DEBUG_PRINTLN(F("- Radio Task"));
+      radio_task();
+    } else {
+      DEBUG_PRINTLN(F("- Skipping Radio Task"));
+    }
+    debug_param();
+    DEBUG_PRINTLN(F("- Setup next wakeup time"));
+    sensor_enable(true);
+    rtc_ack_alarm();
+    rtc_next_alarm(param.sleep_period);
+    sensor_enable(false);
+
+  }
   time_minute = 60 * rtc_time.hour + rtc_time.min;
   // Compute operating mode
   if (time_minute > param.sunset_time || time_minute < param.sunrise_time) {
@@ -110,7 +132,6 @@ void loop()
     DEBUG_PRINTLN(F("- Mode DAY"));
   }
 
-  radio_task();
 
   switch (mode) {
     case DAY:
@@ -135,19 +156,7 @@ void loop()
       break;
   }
 
-  if (rtc_wake) {
-    DEBUG_PRINTLN(F("- Wakeup !"));
-    rtc_wake = false;
-    charge_status = get_charge_status();
-    DEBUG_PRINTLN(F("-Sensors Update"));
-    sensor_enable(true);
-    rtc_get_time(&rtc_time);
-    sensors_update(&sensors_val, param.rpm_measure_time, param.rpm_2_ms);
-    rtc_ack_alarm();
-    rtc_next_alarm(param.sleep_period);
-    sensor_enable(false);
-    debug_sensors();
-  }
+
 }
 
 void radio_task(void)

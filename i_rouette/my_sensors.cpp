@@ -1,4 +1,5 @@
 #include "config.h"
+#include "board.h"
 #include <HMC5883L.h>
 #include <SFE_BMP180.h>
 #include "DHT.h"
