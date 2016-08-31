@@ -36,6 +36,7 @@ void cpu_8MHZ(void);
 void cpu_250KHZ(void);
 void beep(uint8_t nb_beep, bool len);
 void led_tail(bool en);
+void led_white(bool en);
 void all_led_off(void);
 
 #endif // __BOARD_H__

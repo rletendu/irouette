@@ -62,8 +62,10 @@ void board_init(void)
 
   for (i = 0; i < 5; i++) {
     led_tail(true);
+    led_white(true);
     delay(200);
     led_tail(false);
+    led_white(false);
     delay(200);
   }
   beep(5, false);
@@ -121,9 +123,19 @@ void led_tail(bool en)
     digitalWrite(LED_TAIL, 0);
   }
 }
+void led_white(bool en)
+{
+  if (en) {
+    digitalWrite(LED0_PWM_PIN, 1);
+  } else {
+    digitalWrite(LED0_PWM_PIN, 0);
+  }
+}
+
 
 void all_led_off(void)
 {
   led_tail(false);
+  led_white(false);
 }
 

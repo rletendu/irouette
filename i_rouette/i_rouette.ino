@@ -146,6 +146,7 @@ void loop()
       // TODO LED control !
       //cpu_250KHZ();
       led_tail(true);
+      led_white(true);
       attachInterrupt(RTC_INT, rtc_wakeUp, FALLING );
       beep(2, true);
       //LowPower.idle(SLEEP_FOREVER, ADC_OFF, TIMER2_ON, TIMER1_OFF, TIMER0_OFF, SPI_OFF, USART0_OFF, TWI_OFF);
@@ -290,8 +291,7 @@ bool parse_rx_frame(void)
   param.vcc_light_min = atof(&buff[sep[INDEX_VCC_LIGHT] + 1]);
   param.vcc_radio_min = atof(&buff[sep[INDEX_VCC_RADIO] + 1]);
   param.rpm_2_ms = atof(&buff[sep[INDEX_RPM_2_MS] + 1]);
-  debug_param();
-  DEBUG_PRINTLN(F("Param OK"));
+  DEBUG_PRINTLN(F("Get Param OK"));
   return true;
 }
 
