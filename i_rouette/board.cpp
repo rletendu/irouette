@@ -3,7 +3,7 @@
 #include "prescaler.h"
 #include "board.h"
 
-void sensor_enable(bool en)
+void vcc_sensor_enable(bool en)
 {
   if (en) {
     digitalWrite(VCC_EN_PIN, 1);
@@ -16,17 +16,18 @@ void sensor_enable(bool en)
 void radio_enable(bool en)
 {
   if (en) {
-    digitalWrite(VCC_EN_PIN, 0);
+    vcc_sensor_enable(false);
+    
     delay(1000);
     Serial.end();
     Serial.begin(RADIO_BAUD);
-    digitalWrite(VCC_EN_PIN, 1);
+    vcc_sensor_enable(true);
 
     delay(2000);
   } else {
     Serial.end();
     pinMode(TX_PIN, OUTPUT);
-    digitalWrite(VCC_EN_PIN, 0);
+    vcc_sensor_enable(false);
   }
 }
 
@@ -42,7 +43,7 @@ void board_init(void)
   uint8_t i;
   cpu_8MHZ();
   pinMode(VCC_EN_PIN, OUTPUT);
-  sensor_enable(false);
+  vcc_sensor_enable(false);
   radio_enable(false);
   pinMode(LED0_PWM_PIN, OUTPUT);
   pinMode(LED1_PIN, OUTPUT);
@@ -51,7 +52,6 @@ void board_init(void)
   pinMode(CHARGED_PIN, INPUT);
   pinMode(WAKEUP_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
-
 
   // Timer 1 will be used for couting RPM wind speed, disabling its default arduino PWM usage
   TCCR1B = 0x0;
@@ -131,7 +131,6 @@ void led_white(bool en)
     digitalWrite(LED0_PWM_PIN, 0);
   }
 }
-
 
 void all_led_off(void)
 {

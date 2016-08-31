@@ -7,6 +7,7 @@
 #include "LowPower.h"
 #include "prescaler.h"
 #include <SoftwareSerial.h>
+#include <avr/wdt.h>
 
 struct SensorValues sensors_val;
 enum   ChargeState charge_status;
@@ -30,7 +31,16 @@ SoftwareSerial DEBUG_PRINTER(0, DBG_TX_PIN); // RX, TX
 ISR(BADISR_vect)
 {
   led_tail(true);
-  while (1);
+  while (1) {
+    wdt_enable(WDTO_15MS);
+  }
+}
+void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
+void wdt_init(void)
+{
+    MCUSR = 0;
+    wdt_disable();
+    return;
 }
 
 void setup() {
@@ -41,7 +51,11 @@ void setup() {
   DEBUG_PRINTER.begin(9600);
 #endif
 
-  DEBUG_PRINTLN(F("\n*** I_ROUETTE BOOT ***\n"));
+  DEBUG_PRINTLN(F("\n******* I_ROUETTE BOOT *******\n"));
+  DEBUG_PRINT( F("Compiled: "));
+  DEBUG_PRINT( F(__DATE__));
+  DEBUG_PRINT( F(", "));
+  DEBUG_PRINT( F(__TIME__));
 
   param.valid_sig = VALID_SIG;
   param.night_mode_lum = DEFAULT_NIGHT_MODE_LUM;
@@ -54,7 +68,7 @@ void setup() {
   param.rpm_2_ms = DEFAULT_RPM_2_MS;
   debug_param();
 
-  sensor_enable(true);
+  vcc_sensor_enable(true);
   rtc_init();
   rtc_get_time(&rtc_time);
   if ( rtc_time.year < 2016) {
@@ -73,7 +87,7 @@ void setup() {
     rtc_set_time(&rtc_time);
     rtc_get_time(&rtc_time);
   }
-  sensor_enable(false);
+  vcc_sensor_enable(false);
   rtc_wake = true; // Force rtc wake for first loop
 }
 
@@ -89,20 +103,23 @@ void loop()
 {
 
 #ifdef DEBUG_SENSOR_ONLY
-  debug_loop();
+  sensor_debug_loop();
 #endif
 
   if (rtc_wake) {
-    DEBUG_PRINTLN(F("- Wakeup !"));
+    DEBUG_PRINTLN(F("- RTC Wakeup !"));
     rtc_wake = false;
+
+    // Update Sensors Values
     charge_status = get_charge_status();
-    DEBUG_PRINTLN(F("-Sensors Update"));
-    sensor_enable(true);
+    DEBUG_PRINTLN(F("- Sensors Update"));
+    vcc_sensor_enable(true);
     rtc_get_time(&rtc_time);
     sensors_update(&sensors_val, param.rpm_measure_time, param.rpm_2_ms);
-    sensor_enable(false);
-
+    vcc_sensor_enable(false);
     debug_sensors();
+
+    // Send Sensor Values to server and get updated parameters from server
     if (sensors_val.vbat > param.vcc_radio_min) {
       DEBUG_PRINTLN(F("- Radio Task"));
       radio_task();
@@ -110,54 +127,54 @@ void loop()
       DEBUG_PRINTLN(F("- Skipping Radio Task"));
     }
     debug_param();
+
+    // Setup next wakeup by RTC
     DEBUG_PRINTLN(F("- Setup next wakeup time"));
-    sensor_enable(true);
+    vcc_sensor_enable(true);
     rtc_ack_alarm();
     rtc_next_alarm(param.sleep_period);
-    sensor_enable(false);
+    vcc_sensor_enable(false);
 
-  }
-  time_minute = 60 * rtc_time.hour + rtc_time.min;
-  // Compute operating mode
-  if (time_minute > param.sunset_time || time_minute < param.sunrise_time) {
-    if (sensors_val.lum < param.night_mode_lum && sensors_val.vbat > param.vcc_light_min ) {
-      mode = NIGHT_LIGHT_ON;
-      DEBUG_PRINTLN(F("- Mode NIGHT_LIGHT_ON"));
+    // Compute operating mode
+    time_minute = 60 * rtc_time.hour + rtc_time.min;
+    // Check current time versus sunset / sunrise
+    if (time_minute > param.sunset_time || time_minute < param.sunrise_time) {
+      // Check Vbat level and Luminosity level to turn light On
+      if (sensors_val.lum < param.night_mode_lum && sensors_val.vbat > param.vcc_light_min ) {
+        mode = NIGHT_LIGHT_ON;
+        DEBUG_PRINTLN(F("- Mode NIGHT_LIGHT_ON"));
+      } else {
+        mode = NIGHT_LIGHT_OFF;
+        DEBUG_PRINTLN(F("- Mode NIGHT_LIGHT_OFF"));
+      }
     } else {
-      mode = NIGHT_LIGHT_OFF;
-      DEBUG_PRINTLN(F("- Mode NIGHT_LIGHT_OFF"));
+      mode = DAY;
+      DEBUG_PRINTLN(F("- Mode DAY"));
     }
-  } else {
-    mode = DAY;
-    DEBUG_PRINTLN(F("- Mode DAY"));
+    attachInterrupt(RTC_INT, rtc_wakeUp, FALLING );
+    beep(2, true);
   }
-
 
   switch (mode) {
     case DAY:
     case NIGHT_LIGHT_OFF:
       all_led_off();
-      attachInterrupt(RTC_INT, rtc_wakeUp, FALLING );
-      beep(2, true);
+      DEBUG_PRINTLN(F("- Sleeping"));
       LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
       break;
 
     case NIGHT_LIGHT_ON:
       // TODO LED control !
-      //cpu_250KHZ();
       led_tail(true);
       led_white(true);
-      attachInterrupt(RTC_INT, rtc_wakeUp, FALLING );
-      beep(2, true);
-      //LowPower.idle(SLEEP_FOREVER, ADC_OFF, TIMER2_ON, TIMER1_OFF, TIMER0_OFF, SPI_OFF, USART0_OFF, TWI_OFF);
+      DEBUG_PRINTLN(F("- Sleeping"));
       LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+      // LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
       break;
 
     default:
       break;
   }
-
-
 }
 
 void radio_task(void)
@@ -191,7 +208,6 @@ void radio_task(void)
 radio_end:
   radio_disconnect();
   radio_enable(false);
-
 }
 
 
@@ -241,7 +257,7 @@ uint8_t setup_tx_frame(void)
 bool parse_rx_frame(void)
 {
   uint8_t i, j, nb_sep;
-  uint8_t sep[MAX_PARAM_FIELDS];
+  uint8_t sep[INDEX_PARAM_MAX+1];
   uint16_t server_time_minute;
   struct ts server_time;
   if (buff[0] != 'o') {
@@ -272,15 +288,11 @@ bool parse_rx_frame(void)
   server_time.sec = atoi(&buff[sep[INDEX_SEC] + 1]);
   server_time_minute = server_time.min + 60 * server_time.hour;
 
-
   rtc_get_time(&rtc_time);
   time_minute = 60 * rtc_time.hour + rtc_time.min;
   if ( abs(time_minute - server_time_minute) > RTC_MAX_DEVIATION) {
-    DEBUG_PRINTLN(F("RTC Time Update"));
+    DEBUG_PRINTLN(F(" - RTC Time Update !"));
     rtc_set_time(&server_time);
-    // When RTC time is updated, we need to be sure to re-setup next wakeup alarm !
-    rtc_ack_alarm();
-    rtc_next_alarm(param.sleep_period);
   }
 
   param.night_mode_lum = atoi(&buff[sep[INDEX_NIGHT_LUM] + 1]);
@@ -301,7 +313,7 @@ void debug_sensors(void)
 {
   DEBUG_PRINTLN();
   // display current time
-  DEBUG_PRINTLN(F("--- Sensors ---"));
+  DEBUG_PRINTLN(F("-------- Sensors --------"));
   snprintf(buff, BUFF_MAX, "\tRTC: %d.%02d.%02d %02d:%02d:%02d", rtc_time.year,
            rtc_time.mon, rtc_time.mday, rtc_time.hour, rtc_time.min, rtc_time.sec);
   DEBUG_PRINTLN(buff);
@@ -328,7 +340,7 @@ void debug_sensors(void)
 void debug_param(void)
 {
   DEBUG_PRINTLN();
-  DEBUG_PRINTLN(F("--- Parameters ---"));
+  DEBUG_PRINTLN(F("-------- Parameters --------"));
   DEBUG_PRINT(F("\tnight_mode_lum: ")); DEBUG_PRINTLN(param.night_mode_lum);
   DEBUG_PRINT(F("\tsleep_period: ")); DEBUG_PRINTLN(param.sleep_period);
   DEBUG_PRINT(F("\tsunset_time: ")); DEBUG_PRINTLN(param.sunset_time);
@@ -339,17 +351,14 @@ void debug_param(void)
   DEBUG_PRINT(F("\trpm_to_ms: ")); DEBUG_PRINTLN(param.rpm_2_ms, 2);
 }
 
-void debug_loop(void) {
+void sensor_debug_loop(void) {
   while (1) {
-
-    sensor_enable(true);
+    vcc_sensor_enable(true);
     rtc_get_time(&rtc_time);
     sensors_update(&sensors_val, 2, param.rpm_2_ms);
     debug_sensors();
-    sensor_enable(false);
-
+    vcc_sensor_enable(false);
     delay(1000);
-
   }
 }
 

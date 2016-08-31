@@ -9,11 +9,10 @@
 //#define DEBUG_SENSOR_ONLY
 
 
-#define RADIO_BAUD          9600
+#define RADIO_BAUD               9600
 
-#define BUFF_MAX            200
-#define MAX_PARAM_FIELDS    15
-#define RTC_MAX_DEVIATION   5 // In minute
+#define BUFF_MAX                 200
+#define RTC_MAX_DEVIATION        5       // The maximum time deviation in minutes before adjusting RTC time versus server
 
 #define PARAM_EE_ADDR            0
 #define VALID_SIG                0x55AA
@@ -22,14 +21,16 @@
 #define DEFAULT_SUNSET_TIME      22*60
 #define DEFAULT_SUNRISE_TIME     8*60
 #define DEFAULT_RPM_MEASURE_TIME 5
-#define DEFAULT_VBAT_LIGHT_MIN   3.5
-#define DEFAULT_VBAT_RADIO_MIN   3.3
+#define DEFAULT_VBAT_LIGHT_MIN   3.5    // The minimal Vcc Level to keep light active
+#define DEFAULT_VBAT_RADIO_MIN   3.3 
 #define DEFAULT_RPM_2_MS         1.25
 
+#define TIMEOUT_CONNECT          20*1000
+#define TIMEOUT_TX               20*1000
+#define TIMEOUT_RX               20*1000
+
+
 #define HEADING_MECHANICAL_CORRECTION (float)((-62)*PI/180)
-
-
-
 
 enum OperatingMode {
   DAY = 0,
@@ -67,11 +68,6 @@ struct ParamValues {
   float     vcc_radio_min;
   float     rpm_2_ms;
 };
-
-#define TIMEOUT_CONNECT 20*1000
-#define TIMEOUT_TX      20*1000
-#define TIMEOUT_RX      20*1000
-
 
 
 

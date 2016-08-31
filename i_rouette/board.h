@@ -29,7 +29,7 @@
 #define RTC_INT             0
 
 void board_init(void);
-void sensor_enable(bool en);
+void vcc_sensor_enable(bool en);
 void radio_enable(bool en);
 enum ChargeState get_charge_status(void);
 void cpu_8MHZ(void);
