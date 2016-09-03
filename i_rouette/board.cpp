@@ -48,6 +48,8 @@ void board_init(void)
   pinMode(LED0_PWM_PIN, OUTPUT);
   pinMode(LED1_PIN, OUTPUT);
   pinMode(LED_TAIL, OUTPUT);
+  pinMode(LED_GREEN_PIN, OUTPUT);
+  pinMode(LED_BLUE_PIN, OUTPUT);
   pinMode(CHARGING_PIN, INPUT);
   pinMode(CHARGED_PIN, INPUT);
   pinMode(WAKEUP_PIN, INPUT);
@@ -63,9 +65,13 @@ void board_init(void)
   for (i = 0; i < 5; i++) {
     led_tail(true);
     led_white(true);
+    //led_green(true);
+    led_blue(true);
     delay(200);
     led_tail(false);
     led_white(false);
+    led_green(false);
+    led_blue(false);
     delay(200);
   }
   beep(5, false);
@@ -132,9 +138,38 @@ void led_white(bool en)
   }
 }
 
+void led_green(bool en)
+{
+  if (en) {
+    digitalWrite(LED_GREEN_PIN, 1);
+  } else {
+    digitalWrite(LED_GREEN_PIN, 0);
+  }
+}
+
+void led_blue(bool en)
+{
+  if (en) {
+    digitalWrite(LED_BLUE_PIN, 1);
+  } else {
+    digitalWrite(LED_BLUE_PIN, 0);
+  }
+}
+
 void all_led_off(void)
 {
   led_tail(false);
   led_white(false);
+  led_green(false);
+  led_blue(false);
+}
+
+
+void all_led_on(void)
+{
+  led_tail(true);
+  led_white(true);
+  led_green(true);
+  led_blue(true);
 }
 

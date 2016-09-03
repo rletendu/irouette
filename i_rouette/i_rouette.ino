@@ -38,9 +38,9 @@ ISR(BADISR_vect)
 void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
 void wdt_init(void)
 {
-    MCUSR = 0;
-    wdt_disable();
-    return;
+  MCUSR = 0;
+  wdt_disable();
+  return;
 }
 
 void setup() {
@@ -101,7 +101,7 @@ void rtc_wakeUp()
 
 void loop()
 {
-
+  static bool led_color = false;
 #ifdef DEBUG_SENSOR_ONLY
   sensor_debug_loop();
 #endif
@@ -151,6 +151,9 @@ void loop()
       mode = DAY;
       DEBUG_PRINTLN(F("- Mode DAY"));
     }
+#ifdef FORCE_NIGHT_MODE
+    mode = NIGHT_LIGHT_ON;
+#endif
     attachInterrupt(RTC_INT, rtc_wakeUp, FALLING );
     beep(2, true);
   }
@@ -159,17 +162,29 @@ void loop()
     case DAY:
     case NIGHT_LIGHT_OFF:
       all_led_off();
-      DEBUG_PRINTLN(F("- Sleeping"));
+      DEBUG_PRINTLN(F("- Sleeping Day or Light off mode"));
       LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
       break;
 
     case NIGHT_LIGHT_ON:
       // TODO LED control !
+      all_led_off();
       led_tail(true);
       led_white(true);
-      DEBUG_PRINTLN(F("- Sleeping"));
-      LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
-      // LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+      if (led_color) {
+        led_blue(true);
+        led_color = false;
+      } else {
+        led_green(true);
+        led_color = true;
+      }
+
+      DEBUG_PRINTLN(F("- Sleeping Light On mode"));
+      if (sensors_val.vbat > (param.vcc_light_min + 0.1) ) {
+        LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+      } else {
+        LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+      }
       break;
 
     default:
@@ -257,7 +272,7 @@ uint8_t setup_tx_frame(void)
 bool parse_rx_frame(void)
 {
   uint8_t i, j, nb_sep;
-  uint8_t sep[INDEX_PARAM_MAX+1];
+  uint8_t sep[INDEX_PARAM_MAX + 1];
   uint16_t server_time_minute;
   struct ts server_time;
   if (buff[0] != 'o') {

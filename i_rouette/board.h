@@ -4,8 +4,8 @@
 // Pins Assignement
 #define _A0_PIN             A0
 #define RAIN_PIN            A1
-#define _A2_PIN             A2
-#define _A3_PIN             A3
+#define LED_BLUE_PIN        A2
+#define LED_GREEN_PIN       A3
 #define SDA_PIN             A4
 #define SCL_PIN             A5
 #define REF25_PIN           A6
@@ -37,6 +37,9 @@ void cpu_250KHZ(void);
 void beep(uint8_t nb_beep, bool len);
 void led_tail(bool en);
 void led_white(bool en);
+void led_blue(bool en);
+void led_green(bool en);
 void all_led_off(void);
+void all_led_on(void);
 
 #endif // __BOARD_H__
