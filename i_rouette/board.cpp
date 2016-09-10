@@ -17,7 +17,7 @@ void radio_enable(bool en)
 {
   if (en) {
     vcc_sensor_enable(false);
-    
+
     delay(1000);
     Serial.end();
     Serial.begin(RADIO_BAUD);
@@ -32,10 +32,13 @@ void radio_enable(bool en)
 }
 
 enum ChargeState get_charge_status(void) {
-  int val = 0;
-  if (digitalRead(CHARGING_PIN) == HIGH) val = 2;
-  if (digitalRead(CHARGED_PIN) == HIGH) val += 1;
-  return (enum ChargeState)(val);
+  /*
+    int val = 0;
+    if (digitalRead(CHARGING_PIN) == HIGH) val = 2;
+    if (digitalRead(CHARGED_PIN) == HIGH) val += 1;
+    return (enum ChargeState)(val);
+  */
+  return NA;
 }
 
 void board_init(void)
@@ -45,13 +48,18 @@ void board_init(void)
   pinMode(VCC_EN_PIN, OUTPUT);
   vcc_sensor_enable(false);
   radio_enable(false);
-  pinMode(LED0_PWM_PIN, OUTPUT);
-  pinMode(LED1_PIN, OUTPUT);
-  pinMode(LED_TAIL, OUTPUT);
-  pinMode(LED_GREEN_PIN, OUTPUT);
-  pinMode(LED_BLUE_PIN, OUTPUT);
-  pinMode(CHARGING_PIN, INPUT);
-  pinMode(CHARGED_PIN, INPUT);
+  pinMode(LEDS_WHITE_PIN, OUTPUT);
+
+  pinMode(LED_TAIL_PIN, OUTPUT);
+  pinMode(LED_GREEN_HEAD_PIN, OUTPUT);
+  pinMode(LED_BLUE_HEAD_PIN, OUTPUT);
+
+  pinMode(LED_GREEN_RIGHT_PIN, OUTPUT);
+  pinMode(LED_GREEN_LEFT_PIN, OUTPUT);
+  pinMode(LED_RED_RIGHT_PIN, OUTPUT);
+  pinMode(LED_RED_LEFT_PIN, OUTPUT);
+
+
   pinMode(WAKEUP_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
 
@@ -65,13 +73,13 @@ void board_init(void)
   for (i = 0; i < 5; i++) {
     led_tail(true);
     led_white(true);
-    //led_green(true);
-    led_blue(true);
+    led_green_head(true);
+    led_blue_head(true);
     delay(200);
     led_tail(false);
     led_white(false);
-    led_green(false);
-    led_blue(false);
+    led_green_head(false);
+    led_blue_head(false);
     delay(200);
   }
   beep(5, false);
@@ -124,44 +132,93 @@ void beep(uint8_t nb_beep, bool len)
 void led_tail(bool en)
 {
   if (en) {
-    digitalWrite(LED_TAIL, 1);
+    digitalWrite(LED_TAIL_PIN, 1);
   } else {
-    digitalWrite(LED_TAIL, 0);
+    digitalWrite(LED_TAIL_PIN, 0);
   }
 }
 void led_white(bool en)
 {
   if (en) {
-    digitalWrite(LED0_PWM_PIN, 1);
+    digitalWrite(LEDS_WHITE_PIN, 1);
   } else {
-    digitalWrite(LED0_PWM_PIN, 0);
+    digitalWrite(LEDS_WHITE_PIN, 0);
   }
 }
 
-void led_green(bool en)
+void led_green_head(bool en)
 {
   if (en) {
-    digitalWrite(LED_GREEN_PIN, 1);
+    digitalWrite(LED_GREEN_HEAD_PIN, 1);
   } else {
-    digitalWrite(LED_GREEN_PIN, 0);
+    digitalWrite(LED_GREEN_HEAD_PIN, 0);
   }
 }
 
-void led_blue(bool en)
+void led_blue_head(bool en)
 {
   if (en) {
-    digitalWrite(LED_BLUE_PIN, 1);
+    digitalWrite(LED_BLUE_HEAD_PIN, 1);
   } else {
-    digitalWrite(LED_BLUE_PIN, 0);
+    digitalWrite(LED_BLUE_HEAD_PIN, 0);
   }
 }
+
+
+
+
+void led_red_left(bool en)
+{
+  if (en) {
+    digitalWrite(LED_RED_LEFT_PIN, 1);
+  } else {
+    digitalWrite(LED_RED_LEFT_PIN, 0);
+  }
+}
+
+void led_red_right(bool en)
+{
+  if (en) {
+    digitalWrite(LED_RED_RIGHT_PIN, 1);
+  } else {
+    digitalWrite(LED_RED_RIGHT_PIN, 0);
+  }
+}
+
+void led_green_right(bool en)
+{
+  if (en) {
+    digitalWrite(LED_GREEN_RIGHT_PIN, 1);
+  } else {
+    digitalWrite(LED_GREEN_RIGHT_PIN, 0);
+  }
+}
+
+void led_green_left(bool en)
+{
+  if (en) {
+    digitalWrite(LED_GREEN_LEFT_PIN, 1);
+  } else {
+    digitalWrite(LED_GREEN_LEFT_PIN, 0);
+  }
+}
+
+
+
+
+
 
 void all_led_off(void)
 {
   led_tail(false);
   led_white(false);
-  led_green(false);
-  led_blue(false);
+  led_green_head(false);
+  led_blue_head(false);
+
+  led_red_left(false);
+  led_red_right(false);
+  led_green_right(false);
+  led_green_left(false);
 }
 
 
@@ -169,7 +226,10 @@ void all_led_on(void)
 {
   led_tail(true);
   led_white(true);
-  led_green(true);
-  led_blue(true);
+  led_green_head(true);
+  led_blue_head(true);
+  led_red_left(true);
+  led_red_right(true);
+  led_green_right(true);
+  led_green_left(true);
 }
-

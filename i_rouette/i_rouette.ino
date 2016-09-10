@@ -17,6 +17,7 @@ struct ts rtc_time;
 bool   rtc_wake = false;
 char   buff[BUFF_MAX];
 uint16_t time_minute;
+uint8_t led_fsm = 0;
 
 void debug_sensors(void);
 void debug_param(void);
@@ -101,12 +102,13 @@ void rtc_wakeUp()
 
 void loop()
 {
-  static bool led_color = false;
+  uint8_t i;
 #ifdef DEBUG_SENSOR_ONLY
   sensor_debug_loop();
 #endif
 
   if (rtc_wake) {
+    wdt_enable(WDTO_8S);
     DEBUG_PRINTLN(F("- RTC Wakeup !"));
     rtc_wake = false;
 
@@ -115,6 +117,7 @@ void loop()
     DEBUG_PRINTLN(F("- Sensors Update"));
     vcc_sensor_enable(true);
     rtc_get_time(&rtc_time);
+    wdt_reset();
     sensors_update(&sensors_val, param.rpm_measure_time, param.rpm_2_ms);
     vcc_sensor_enable(false);
     debug_sensors();
@@ -122,18 +125,26 @@ void loop()
     // Send Sensor Values to server and get updated parameters from server
     if (sensors_val.vbat > param.vcc_radio_min) {
       DEBUG_PRINTLN(F("- Radio Task"));
+      wdt_disable();
       radio_task();
+      wdt_reset();
+      wdt_enable(WDTO_8S);
     } else {
       DEBUG_PRINTLN(F("- Skipping Radio Task"));
+      wdt_reset();
     }
+
     debug_param();
+    wdt_reset();
 
     // Setup next wakeup by RTC
     DEBUG_PRINTLN(F("- Setup next wakeup time"));
+    wdt_reset();
     vcc_sensor_enable(true);
     rtc_ack_alarm();
     rtc_next_alarm(param.sleep_period);
     vcc_sensor_enable(false);
+    wdt_disable();
 
     // Compute operating mode
     time_minute = 60 * rtc_time.hour + rtc_time.min;
@@ -167,16 +178,51 @@ void loop()
       break;
 
     case NIGHT_LIGHT_ON:
-      // TODO LED control !
+
+      if (sensors_val.temp_ext <= 0) {
+        for (i = 0; i < 5; i++) {
+          led_tail(true);
+          led_white(true);
+          led_green_head(true);
+          led_green_right(true);
+          led_green_left(true);
+          delay(200);
+          all_led_off();
+          delay(200);
+        }
+      }
+
       all_led_off();
       led_tail(true);
       led_white(true);
-      if (led_color) {
-        led_blue(true);
-        led_color = false;
-      } else {
-        led_green(true);
-        led_color = true;
+
+      switch (led_fsm) {
+        case 0:
+          led_blue_head(true);
+          led_fsm++;
+          break;
+
+        case 1:
+          led_green_head(true);
+          led_fsm++;
+          break;
+
+        case 2:
+          led_green_right(true);
+          led_green_left(true);
+          led_fsm++;
+          break;
+        case 3:
+          led_red_right(true);
+          led_red_left(true);
+          led_fsm++;
+          break;
+
+        default:
+          all_led_on();
+          led_fsm = 0;
+          break;
+
       }
 
       DEBUG_PRINTLN(F("- Sleeping Light On mode"));
@@ -316,7 +362,10 @@ bool parse_rx_frame(void)
   param.sunrise_time = atoi(&buff[sep[INDEX_SUNRISE] + 1]);
   param.rpm_measure_time = atoi(&buff[sep[INDEX_RPM_TIME] + 1]);
   param.vcc_light_min = atof(&buff[sep[INDEX_VCC_LIGHT] + 1]);
+  if (param.vcc_light_min < 3.0 ) param.vcc_light_min = DEFAULT_VBAT_LIGHT_MIN;
+
   param.vcc_radio_min = atof(&buff[sep[INDEX_VCC_RADIO] + 1]);
+  if (param.vcc_radio_min < 3.0) param.vcc_radio_min = DEFAULT_VBAT_RADIO_MIN;
   param.rpm_2_ms = atof(&buff[sep[INDEX_RPM_2_MS] + 1]);
   DEBUG_PRINTLN(F("Get Param OK"));
   return true;

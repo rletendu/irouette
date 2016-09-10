@@ -4,6 +4,7 @@
 #include <SFE_BMP180.h>
 #include "DHT.h"
 #include "my_sensors.h"
+#include <avr/wdt.h>
 
 
 DHT dht(DHT_PIN, DHT22);
@@ -28,7 +29,7 @@ void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_
 
   TCCR1B = 0x6;
   end_time = millis() + 1000 * speed_measure_time;
-
+  wdt_reset();
   sensors_init();
 
   val->vbat = (2.5 * 1024) / analogRead(REF25_PIN);
@@ -43,6 +44,7 @@ void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_
   status = pressure.startTemperature();
   if (status != 0)
   {
+    wdt_reset();
     delay(status);
     status = pressure.getTemperature(int_temperature);
     if (status != 0)
@@ -50,6 +52,7 @@ void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_
       status = pressure.startPressure(3);
       if (status != 0)
       {
+        wdt_reset();
         delay(status);
         status = pressure.getPressure(int_pressure, int_temperature);
       }
@@ -73,6 +76,7 @@ void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_
   val->wind_dir =  int(heading * RAD_TO_DEG);
 
   while (millis() < end_time) {
+    wdt_reset();
   }
   val->wind_speed = TCNT1 * (60 / speed_measure_time) * rpm_2_ms;
   TCCR1B = 0x0; TCNT1 = 0;
