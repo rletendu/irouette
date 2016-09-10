@@ -178,41 +178,60 @@ void loop()
       break;
 
     case NIGHT_LIGHT_ON:
-
+#ifdef FORCE_FREEZE
+      {
+#else
       if (sensors_val.temp_ext <= 0) {
-        for (i = 0; i < 5; i++) {
-          led_tail(true);
-          led_white(true);
-          led_green_head(true);
-          led_green_right(true);
-          led_green_left(true);
-          delay(200);
+#endif
+
+        for (i = 0; i < 10; i++) {
+          all_led_on();
+          delay(100);
           all_led_off();
-          delay(200);
+          delay(100);
         }
+        //beep(1, true);
       }
 
       all_led_off();
       led_tail(true);
-      led_white(true);
+
 
       switch (led_fsm) {
         case 0:
           led_blue_head(true);
+          led_white(true);
           led_fsm++;
           break;
 
         case 1:
           led_green_head(true);
+          led_white(true);
           led_fsm++;
           break;
 
         case 2:
+          led_green_head(true);
           led_green_right(true);
           led_green_left(true);
           led_fsm++;
           break;
         case 3:
+          led_blue_head(true);
+          led_red_right(true);
+          led_red_left(true);
+          led_fsm++;
+          break;
+
+        case 4:
+          led_tail(false);
+          led_red_right(true);
+          led_green_left(true);;
+          led_fsm++;
+          break;
+
+        case 5:
+          led_tail(false);
           led_red_right(true);
           led_red_left(true);
           led_fsm++;

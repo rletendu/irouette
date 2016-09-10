@@ -8,6 +8,7 @@
 #define SERIAL_DEBUG
 //#define DEBUG_SENSOR_ONLY
 //#define FORCE_NIGHT_MODE
+//#define FORCE_FREEZE
 
 
 #define RADIO_BAUD               9600

@@ -7,7 +7,7 @@ void vcc_sensor_enable(bool en)
 {
   if (en) {
     digitalWrite(VCC_EN_PIN, 1);
-    delay(2000);
+    delay(2500);
   } else {
     digitalWrite(VCC_EN_PIN, 0);
   }
@@ -71,15 +71,9 @@ void board_init(void)
   TCCR2B = (1 << CS20);
 
   for (i = 0; i < 5; i++) {
-    led_tail(true);
-    led_white(true);
-    led_green_head(true);
-    led_blue_head(true);
+    all_led_on();
     delay(200);
-    led_tail(false);
-    led_white(false);
-    led_green_head(false);
-    led_blue_head(false);
+    all_led_off();
     delay(200);
   }
   beep(5, false);
