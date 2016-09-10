@@ -39,7 +39,7 @@ void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_
   val->lum = analogRead(LDR_PIN);
   
   val->rain = analogRead(RAIN_PIN);
-  val->rain = analogRead(RAIN_PIN);
+
 
   status = pressure.startTemperature();
   if (status != 0)

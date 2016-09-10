@@ -24,6 +24,7 @@ void debug_param(void);
 void radio_task(void);
 uint8_t setup_tx_frame(void);
 bool parse_rx_frame(void);
+void led_task(void);
 
 #ifdef SERIAL_DEBUG
 SoftwareSerial DEBUG_PRINTER(0, DBG_TX_PIN); // RX, TX
@@ -178,72 +179,7 @@ void loop()
       break;
 
     case NIGHT_LIGHT_ON:
-#ifdef FORCE_FREEZE
-      {
-#else
-      if (sensors_val.temp_ext <= 0) {
-#endif
-
-        for (i = 0; i < 10; i++) {
-          all_led_on();
-          delay(100);
-          all_led_off();
-          delay(100);
-        }
-        //beep(1, true);
-      }
-
-      all_led_off();
-      led_tail(true);
-
-
-      switch (led_fsm) {
-        case 0:
-          led_blue_head(true);
-          led_white(true);
-          led_fsm++;
-          break;
-
-        case 1:
-          led_green_head(true);
-          led_white(true);
-          led_fsm++;
-          break;
-
-        case 2:
-          led_green_head(true);
-          led_green_right(true);
-          led_green_left(true);
-          led_fsm++;
-          break;
-        case 3:
-          led_blue_head(true);
-          led_red_right(true);
-          led_red_left(true);
-          led_fsm++;
-          break;
-
-        case 4:
-          led_tail(false);
-          led_red_right(true);
-          led_green_left(true);;
-          led_fsm++;
-          break;
-
-        case 5:
-          led_tail(false);
-          led_red_right(true);
-          led_red_left(true);
-          led_fsm++;
-          break;
-
-        default:
-          all_led_on();
-          led_fsm = 0;
-          break;
-
-      }
-
+      led_task();
       DEBUG_PRINTLN(F("- Sleeping Light On mode"));
       if (sensors_val.vbat > (param.vcc_light_min + 0.1) ) {
         LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
@@ -443,5 +379,63 @@ void sensor_debug_loop(void) {
     vcc_sensor_enable(false);
     delay(1000);
   }
+}
+
+void led_task(void)
+{
+  uint8_t i;
+#ifdef FORCE_FREEZE
+  {
+#else
+  if (sensors_val.temp_ext <= 0) {
+#endif
+
+    for (i = 0; i < 10; i++) {
+      all_led_on();
+      delay(100);
+      all_led_off();
+      delay(100);
+    }
+    //beep(1, true);
+  }
+
+  all_led_off();
+  led_tail(true);
+
+
+  switch (led_fsm) {
+    case 0:
+      led_blue_head(true);
+      led_white(true);
+      led_fsm++;
+      break;
+
+    case 1:
+      led_green_head(true);
+      led_white(true);
+      led_fsm++;
+      break;
+
+    case 2:
+      led_green_head(true);
+      led_green_right(true);
+      led_green_left(true);
+      led_fsm++;
+      break;
+
+    case 3:
+      led_blue_head(true);
+      led_red_right(true);
+      led_red_left(true);
+      led_fsm++;
+      break;
+
+    default:
+      all_led_on();
+      led_fsm = 0;
+      break;
+
+  }
+
 }
 
