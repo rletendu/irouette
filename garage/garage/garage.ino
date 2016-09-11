@@ -1,3 +1,10 @@
+#include <ESP8266WiFi.h>
+
+
+#include "config.h"
+#include "domoticz.h"
+
+
 #define RELAY_PIN D1
 #define DHT_PIN D4
 #define FORCE_PIN  D2
@@ -5,6 +12,9 @@
 
 volatile bool isr = false;
 volatile uint8_t isr_count = 0;
+
+Domoticz domo = Domoticz();
+WiFiServer server(80);
 
 void relay_pulse(void)
 {
@@ -22,6 +32,8 @@ void door_opened(void)
 
 
 void setup() {
+  WiFi.disconnect();
+  WiFi.mode(WIFI_STA);
   Serial.begin(9600);
   Serial.println("Starting");
   // put your setup code here, to run once:
@@ -37,8 +49,13 @@ void setup() {
   } else {
     Serial.println("Door Closed");
   }
-
-
+  if (domo.begin()) {
+    Serial.println("Connect OK");
+  } else {
+    Serial.println("Connect Fail");
+  }
+  server.begin();
+  Serial.println("Server started");
 }
 
 void loop() {
@@ -47,13 +64,56 @@ void loop() {
     if (digitalRead(SENSE_PIN) ) {
       Serial.println("Door Openned");
       Serial.println("Closing...");
-      relay_pulse();
+      if (domo.update_switch(IDX_GARAGE_DOOR, false)) {
+        Serial.println("Update Open OK ...");;
+      } else {
+        Serial.println("Update Open KO ...");;
+      }
+
     } else {
       Serial.println("Door Closed");
+      domo.update_switch(IDX_GARAGE_DOOR, true);
     }
     isr = false;
   }
-  delay(1000);
-  // put your main code here, to run repeatedly:
+
+
+  WiFiClient client = server.available();
+  if (!client) {
+    return;
+  }
+
+  // Wait until the client sends some data
+  Serial.println("new client");
+  while (!client.available()) {
+    delay(1);
+  }
+
+  // Read the first line of the request
+  String req = client.readStringUntil('\r');
+  Serial.println(req);
+  client.flush();
+
+  // Match the request
+  int val;
+  if (req.indexOf("/relay") != -1)
+    relay_pulse();
+  else {
+    Serial.println("invalid request");
+    client.stop();
+    return;
+  }
+
+
+  client.flush();
+  String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\nDoor Garage Activation OK ";
+  s += (val) ? "high" : "low";
+  s += "</html>\n";
+
+  // Send the response to the client
+  client.print(s);
+  delay(1);
+  Serial.println("Client disonnected");
+
 
 }
