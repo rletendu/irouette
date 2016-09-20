@@ -1,0 +1,3 @@
+[submodule "garage/garage/domoticz"]
+	path = garage/garage/domoticz
+	url = https://github.com/rletendu/domoticz
