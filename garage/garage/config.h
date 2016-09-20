@@ -1,23 +1,15 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#define DOMOTICZ_DEBUG
-// #define IROUETTE_ESP_DEBUG
+#define DHTTYPE     DHT22
 
+#define RELAY_PIN   D1
+#define DHT_PIN     D4
+#define FORCE_PIN   D2
+#define SENSE_PIN   D3
 
-#define DOMO_CONNECT 1
+#define RELAY_PULSE_TIME 1000 
 
-#if (DOMO_CONNECT==1)
-#define DOMOTICZ_SERVER "192.168.2.201"
-#define DOMOTICZ_PORT 8080
-#define MYSSID "domo"
-#define PASSWD "pulsar est content"
-#elif (DOMO_CONNECT==2)
-#define DOMOTICZ_SERVER "rletendu.no-ip.org"
-#define DOMOTICZ_PORT 8080
-#define MYSSID "honor6"
-#define PASSWD "pulsar44"
-#endif
 
 // Domoticz Server IDx configuration
 #define IDX_WIND          4
