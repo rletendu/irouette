@@ -26,6 +26,10 @@ Domoticz::Domoticz(void)
 bool Domoticz::begin(void)
 {
   char wifi_timeout = 0;
+  uint8_t i;
+  uint8_t mac[6];
+
+
   DEBUG_PRINT("-Connecting Wifi "); DEBUG_PRINTLN(MYSSID);
   WiFi.disconnect();
   WiFi.mode(WIFI_STA);
@@ -37,14 +41,29 @@ bool Domoticz::begin(void)
     }
     delay(500);
   }
-  DEBUG_PRINT("IP:");DEBUG_PRINTLN(WiFi.localIP());
-  DEBUG_PRINT("Link:");DEBUG_PRINT(WiFi.RSSI());DEBUG_PRINTLN("dBm");
+  DEBUG_PRINT("IP:"); DEBUG_PRINTLN(WiFi.localIP());
+  DEBUG_PRINT("Link:"); DEBUG_PRINT(WiFi.RSSI()); DEBUG_PRINTLN("dBm");
+  WiFi.macAddress(mac);
+  DEBUG_PRINT("MAC: ");
+  DEBUG_PRINT(mac[5], HEX);
+  DEBUG_PRINT(":");
+  DEBUG_PRINT(mac[4], HEX);
+  DEBUG_PRINT(":");
+  DEBUG_PRINT(mac[3], HEX);
+  DEBUG_PRINT(":");
+  DEBUG_PRINT(mac[2], HEX);
+  DEBUG_PRINT(":");
+  DEBUG_PRINT(mac[1], HEX);
+  DEBUG_PRINT(":");
+  DEBUG_PRINTLN(mac[0], HEX);
+
+
   return true;
 }
 
 bool Domoticz::exchange(void)
 {
-  
+
   int i;
   if (!_client.connect(DOMOTICZ_SERVER, DOMOTICZ_PORT)) {
     DEBUG_PRINTLN("connection failed");
@@ -63,7 +82,10 @@ bool Domoticz::exchange(void)
     return false;
   }
   str = str.substring(str.indexOf('{'));
-  for (i = 0; i < sizeof(_buff); i++) { _buff[i] = 0; ESP.wdtFeed(); }
+  for (i = 0; i < sizeof(_buff); i++) {
+    _buff[i] = 0;
+    ESP.wdtFeed();
+  }
   str.toCharArray(_buff, DOMO_BUFF_MAX);
   DEBUG_PRINT("_buff content:"); DEBUG_PRINTLN(strlen(_buff)); DEBUG_PRINTLN(_buff);
   return true;
@@ -268,10 +290,10 @@ bool Domoticz::update_switch(int idx, bool state)
   int i;
   String str = "/json.htm?type=command&param=udevice&idx=" + String(idx) + "&nvalue="; ;
   //String str = "/json.htm?type=command&param=switchlight&idx=" + String(idx) + "&switchcmd=";
-  
+
   char *z;
   if (state) {
-    str +="0&svalue=0";
+    str += "0&svalue=0";
   } else {
     str += "1&svalue=1";
   }
