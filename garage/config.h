@@ -8,7 +8,8 @@
 #define FORCE_PIN   D2
 #define SENSE_PIN   D3
 
-#define RELAY_PULSE_TIME 1000 
+#define RELAY_PULSE_TIME         1000
+#define UPDATE_TEMPERATURE_DELAY   10
 
 
 // Domoticz Server IDx configuration

@@ -9,13 +9,14 @@ DHT dht(DHT_PIN, DHTTYPE);
 float humidity, temperature;
 Domoticz domo = Domoticz();
 WiFiServer server(80);
+unsigned long update_temperature_time;
 
 bool update_door_status(void);
 void client_task(void);
 bool update_temperature(float *temp, float *hum);
 
 
-bool update_temperature(float *temp, float *hum) 
+bool update_temperature(float *temp, float *hum)
 {
   float h = dht.readHumidity();
   float t = dht.readTemperature();
@@ -25,7 +26,7 @@ bool update_temperature(float *temp, float *hum)
     Serial.println("Failed to read from DHT sensor!");
     return false;
   }
-  
+
   Serial.print("Temperature: "); Serial.println(t, 2);
   Serial.print("Humidity: "); Serial.println(h, 2);
   *temp = t;
@@ -46,7 +47,7 @@ void door_changed(void)
 }
 
 
-void setup() 
+void setup()
 {
   WiFi.disconnect();
   WiFi.mode(WIFI_STA);
@@ -74,12 +75,18 @@ void setup()
   Serial.println("Server started");
 
   dht.begin();
+
   update_temperature(&temperature, &humidity);
+  domo.udpate_temp_hum(IDX_GARAGE_TEMP, temperature, humidity);
+  update_temperature_time = millis() + 1000 * 60 * UPDATE_TEMPERATURE_DELAY;
 }
 
 void loop() {
-
-  //update_temperature();
+  if (millis() > update_temperature_time) {
+    update_temperature(&temperature, &humidity);
+    domo.udpate_temp_hum(IDX_GARAGE_TEMP, temperature, humidity);
+    update_temperature_time = millis() + 1000 * 60 * UPDATE_TEMPERATURE_DELAY;
+  }
   if (isr) {
     delay(2000);
     if (update_door_status() == false) {
