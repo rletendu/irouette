@@ -18,11 +18,13 @@ bool update_temperature(float *temp, float *hum);
 
 bool update_temperature(float *temp, float *hum)
 {
+  dht.begin();
   float h = dht.readHumidity();
   float t = dht.readTemperature();
+//  dht.stop();
 
   // Check if any reads failed and exit early (to try again).
-  if (isnan(humidity) || isnan(temperature)) {
+  if (isnan(h) || isnan(t)) {
     Serial.println("Failed to read from DHT sensor!");
     return false;
   }
@@ -83,9 +85,10 @@ void setup()
 
 void loop() {
   if (millis() > update_temperature_time) {
-    update_temperature(&temperature, &humidity);
-    domo.udpate_temp_hum(IDX_GARAGE_TEMP, temperature, humidity);
-    update_temperature_time = millis() + 1000 * 60 * UPDATE_TEMPERATURE_DELAY;
+    if (update_temperature(&temperature, &humidity)) {
+      domo.udpate_temp_hum(IDX_GARAGE_TEMP, temperature, humidity);
+      update_temperature_time = millis() + 1000 * 60 * UPDATE_TEMPERATURE_DELAY;
+    }
   }
   if (isr) {
     delay(2000);
