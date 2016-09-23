@@ -24,6 +24,7 @@ void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_
   char status;
   double int_temperature, int_pressure;
   float heading;
+  float tmp;
   unsigned long start_time, end_time;
   start_time = millis();
 
@@ -34,12 +35,9 @@ void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_
 
   val->vbat = (2.5 * 1024) / analogRead(REF25_PIN);
   val->vbat = (2.5 * 1024) / analogRead(REF25_PIN);
-  
-  val->lum = analogRead(LDR_PIN);
-  val->lum = analogRead(LDR_PIN);
-  
-  val->rain = analogRead(RAIN_PIN);
 
+  val->lum = analogRead(LDR_PIN);
+  val->rain = analogRead(RAIN_PIN);
 
   status = pressure.startTemperature();
   if (status != 0)
@@ -55,16 +53,24 @@ void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_
         wdt_reset();
         delay(status);
         status = pressure.getPressure(int_pressure, int_temperature);
+        if (status != 0)
+        {
+          val->temp_int = int_temperature;
+          val->pressure = int_pressure;
+        }
       }
     }
   }
-  val->temp_int = int_temperature;
-  val->pressure = int_pressure;
 
-  // Reading temperature or humidity takes about 250 milliseconds!
-  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  val->humidity = dht.readHumidity();
-  val->temp_ext = dht.readTemperature();
+
+  tmp = dht.readHumidity();
+  if ( !isnan(tmp) ) {
+    val->humidity = tmp;
+  }
+  tmp = dht.readTemperature();
+  if ( !isnan(tmp) ) {
+    val->temp_ext = tmp;
+  }
 
   MagnetometerScaled scaled = compass.ReadScaledAxis(); //scaled values from compass.
   heading = atan2(scaled.YAxis, scaled.XAxis);
