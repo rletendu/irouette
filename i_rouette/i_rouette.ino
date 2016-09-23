@@ -109,6 +109,17 @@ void loop()
 #endif
 
   if (rtc_wake) {
+    if (mode == NIGHT_LIGHT_ON) {
+      all_led_off();
+      for (i = 0; i < 10; i++) {
+        led_tail(true);
+        delay(100);
+        led_tail(false);
+        delay(100);
+      }
+      led_tail(true);
+    }
+
     wdt_enable(WDTO_8S);
     DEBUG_PRINTLN(F("- RTC Wakeup !"));
     rtc_wake = false;
@@ -396,46 +407,64 @@ void led_task(void)
       all_led_off();
       delay(100);
     }
-    //beep(1, true);
   }
 
   all_led_off();
   led_tail(true);
 
+  if (sensors_val.vbat > (param.vcc_light_min + 0.1) ) {
+    switch (led_fsm) {
+      case 0:
+        led_blue_head(true);
+        led_white(true);
+        led_fsm++;
+        break;
 
-  switch (led_fsm) {
-    case 0:
-      led_blue_head(true);
-      led_white(true);
-      led_fsm++;
-      break;
+      case 1:
+        led_green_head(true);
+        led_white(true);
+        led_fsm++;
+        break;
 
-    case 1:
-      led_green_head(true);
-      led_white(true);
-      led_fsm++;
-      break;
+      case 2:
+        led_green_head(true);
+        led_green_right(true);
+        led_green_left(true);
+        led_fsm++;
+        break;
 
-    case 2:
-      led_green_head(true);
-      led_green_right(true);
-      led_green_left(true);
-      led_fsm++;
-      break;
+      case 3:
+        led_blue_head(true);
+        led_red_right(true);
+        led_red_left(true);
+        led_fsm++;
+        break;
 
-    case 3:
-      led_blue_head(true);
-      led_red_right(true);
-      led_red_left(true);
-      led_fsm++;
-      break;
+      default:
+        all_led_on();
+        led_fsm = 0;
+        break;
 
-    default:
-      all_led_on();
-      led_fsm = 0;
-      break;
+    }
+  } else {
+    switch (led_fsm) {
+      case 0:
+        led_blue_head(true);
+        led_fsm++;
+        break;
 
+      case 1:
+        led_green_head(true);
+        led_fsm++;
+        break;
+
+      default:
+        led_green_head(true);
+        led_green_right(true);
+        led_green_left(true);
+        led_fsm = 0;
+        break;
+    }
   }
-
 }
 
