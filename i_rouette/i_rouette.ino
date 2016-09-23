@@ -237,22 +237,22 @@ uint8_t setup_tx_frame(void)
            rtc_time.year, rtc_time.mon, rtc_time.mday, rtc_time.hour, rtc_time.min, rtc_time.sec);
 
   index = strlen(buff); remain -= index;
-  dtostrf(sensors_val.temp_ext, 4, 1, str_temp);
+  dtostrf(sensors_val.temp_ext, 3, 1, str_temp);
   snprintf(&buff[index], remain, "|%s", str_temp);
 
   index = strlen(buff); remain -= index;
-  dtostrf(sensors_val.temp_int, 4, 1, str_temp);
+  dtostrf(sensors_val.temp_int, 3, 1, str_temp);
   snprintf(&buff[index], remain, "|%s", str_temp);
 
   index = strlen(buff); remain -= index;
-  dtostrf(sensors_val.pressure, 4, 1, str_temp);
+  dtostrf(sensors_val.pressure, 3, 1, str_temp);
   snprintf(&buff[index], remain, "|%s", str_temp);
 
   index = strlen(buff); remain -= index;
   snprintf(&buff[index], remain, "|%d", sensors_val.lum);
 
   index = strlen(buff); remain -= index;
-  dtostrf(sensors_val.humidity, 4, 1, str_temp);
+  dtostrf(sensors_val.humidity, 3, 1, str_temp);
   snprintf(&buff[index], remain, "|%s", str_temp);
 
   index = strlen(buff); remain -= index;
