@@ -4,3 +4,6 @@
 [submodule "cabane/domoticz"]
 	path = cabane/domoticz
 	url = https://github.com/rletendu/domoticz
+[submodule "sample_node/domoticz"]
+	path = sample_node/domoticz
+	url = https://github.com/rletendu/domoticz
