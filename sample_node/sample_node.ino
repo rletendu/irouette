@@ -1,121 +1,52 @@
 #include <ESP8266WiFi.h>
-#include <DHT.h>
 #include "config.h"
 #include "domoticz/domoticz.h"
 
 
-volatile bool isr = false;
-DHT dht(DHT_PIN, DHTTYPE);
-float humidity, temperature;
 Domoticz domo = Domoticz();
 WiFiServer server(80);
-unsigned long update_temperature_time;
-
-bool update_door_status(void);
 void client_task(void);
-bool update_temperature(float *temp, float *hum);
 
-
-bool update_temperature(float *temp, float *hum)
-{
-  dht.begin();
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
-//  dht.stop();
-
-  // Check if any reads failed and exit early (to try again).
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Failed to read from DHT sensor!");
-    return false;
-  }
-
-  Serial.print("Temperature: "); Serial.println(t, 2);
-  Serial.print("Humidity: "); Serial.println(h, 2);
-  *temp = t;
-  *hum = h;
-  return true;
-}
-
-void relay_pulse(void)
-{
-  digitalWrite(RELAY_PIN, 1);
-  delay(RELAY_PULSE_TIME);
-  digitalWrite(RELAY_PIN, 0);
-}
-
-void door_changed(void)
-{
-  isr = true;
-}
-
+ADC_MODE(ADC_VCC);
+char buff[100];
+char name_buff[20];
 
 void setup()
 {
-  WiFi.disconnect();
-  WiFi.mode(WIFI_STA);
+  float f;
+  uint8_t h;
   Serial.begin(9600);
-  Serial.println("Starting");
-
-  pinMode(SENSE_PIN, INPUT_PULLUP);
-  pinMode(RELAY_PIN, OUTPUT);
-  pinMode(FORCE_PIN, OUTPUT);
-  digitalWrite(FORCE_PIN, 0);
-  attachInterrupt(digitalPinToInterrupt(SENSE_PIN), door_changed, CHANGE);
+  DEBUG_PRINTLN("Starting");
+  DEBUG_PRINT("Esp Vcc: "); DEBUG_PRINTLN(ESP.getVcc());
 
   if (domo.begin()) {
-    Serial.println("Connect OK");
+    DEBUG_PRINTLN("Connect OK");
   } else {
-    Serial.println("Connect Fail");
-    ESP.restart();
-  }
-
-  if (update_door_status() == false) {
+    DEBUG_PRINTLN("Connect Fail");
     ESP.restart();
   }
 
   server.begin();
-  Serial.println("Server started");
+  DEBUG_PRINTLN("Server started");
 
-  dht.begin();
-
-  update_temperature(&temperature, &humidity);
-  domo.udpate_temp_hum(IDX_GARAGE_TEMP, temperature, humidity);
-  update_temperature_time = millis() + 1000 * 60 * UPDATE_TEMPERATURE_DELAY;
+  if (domo.get_servertime(buff)) {
+    DEBUG_PRINT("Server Time:"); DEBUG_PRINTLN(buff);
+  }
+  if (domo.get_temperature(10, &f, &h, name_buff)) {
+    DEBUG_PRINT("Temperature Garage:"); DEBUG_PRINTLN(f);
+  }
+  if (domo.get_temperature(3, &f, &h, name_buff)) {
+    DEBUG_PRINT("Temperature Congelateur:"); DEBUG_PRINTLN(f);
+  }
 }
 
 void loop() {
-  if (millis() > update_temperature_time) {
-    if (update_temperature(&temperature, &humidity)) {
-      domo.udpate_temp_hum(IDX_GARAGE_TEMP, temperature, humidity);
-      update_temperature_time = millis() + 1000 * 60 * UPDATE_TEMPERATURE_DELAY;
-    }
-  }
-  if (isr) {
-    delay(2000);
-    if (update_door_status() == false) {
-      ESP.restart();
-    }
-    isr = false;
-  }
+
   client_task();
 }
 
 
-bool update_door_status(void)
-{
-  if (digitalRead(SENSE_PIN) ) {
-    Serial.println("Door Openned");
-    if (domo.update_switch(IDX_GARAGE_DOOR, false)) {
-      Serial.println("Update Open OK ...");;
-    } else {
-      Serial.println("Update Open KO ...");;
-    }
 
-  } else {
-    Serial.println("Door Closed");
-    domo.update_switch(IDX_GARAGE_DOOR, true);
-  }
-}
 
 void client_task(void)
 {
@@ -125,23 +56,26 @@ void client_task(void)
   }
 
   // Wait until the client sends some data
-  Serial.println("new client");
+  DEBUG_PRINTLN("new client");
   while (!client.available()) {
     delay(1);
   }
 
   // Read the first line of the request
   String req = client.readStringUntil('\r');
-  Serial.println(req);
+  DEBUG_PRINTLN(req);
   client.flush();
 
   // Match the request
-  if (req.indexOf("/relay") != -1)
-    relay_pulse();
-  else if (req.indexOf("/reset") != -1)
+  if (req.indexOf("/relay") != -1) {
+    DEBUG_PRINTLN("Relay Request");
+  }
+  else if (req.indexOf("/reset") != -1) {
+    DEBUG_PRINTLN("Reset Request");
     ESP.restart();
+  }
   else {
-    Serial.println("invalid request");
+    DEBUG_PRINTLN("invalid request");
     client.stop();
     return;
   }
@@ -151,6 +85,59 @@ void client_task(void)
   // Send the response to the client
   client.print(s);
   delay(1);
-  Serial.println("Client disonnected");
+  DEBUG_PRINTLN("Client disonnected");
 }
 
+
+/*
+
+{
+   "ActTime" : 1475089965,
+   "ServerTime" : "2016-09-28 21:12:45",
+   "Sunrise" : "08:00",
+   "Sunset" : "19:48",
+   "result" : [
+      {
+         "AddjMulti" : 1.0,
+         "AddjMulti2" : 1.0,
+         "AddjValue" : -7.0,
+         "AddjValue2" : 0.0,
+         "BatteryLevel" : 255,
+         "CustomImage" : 0,
+         "Data" : "21.9 C, 60 %",
+         "Description" : "",
+         "DewPoint" : "13.79",
+         "Favorite" : 0,
+         "HardwareID" : 3,
+         "HardwareName" : "Virtual",
+         "HardwareType" : "Dummy (Does nothing, use for virtual switches only)",
+         "HardwareTypeVal" : 15,
+         "HaveTimeout" : false,
+         "Humidity" : 60,
+         "HumidityStatus" : "Normal",
+         "ID" : "14059",
+         "LastUpdate" : "2016-09-28 21:07:20",
+         "Name" : "Garage",
+         "Notifications" : "false",
+         "PlanID" : "0",
+         "PlanIDs" : [ 0 ],
+         "Protected" : false,
+         "ShowNotifications" : true,
+         "SignalLevel" : "-",
+         "SubType" : "THGN122/123, THGN132, THGR122/228/238/268",
+         "Temp" : 21.90,
+         "Timers" : "false",
+         "Type" : "Temp + Humidity",
+         "TypeImg" : "temperature",
+         "Unit" : 1,
+         "Used" : 1,
+         "XOffset" : "0",
+         "YOffset" : "0",
+         "idx" : "10"
+      }
+   ],
+   "status" : "OK",
+   "title" : "Devices"
+}
+*/
+ */

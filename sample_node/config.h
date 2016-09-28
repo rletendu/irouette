@@ -1,6 +1,8 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
+#define SERIAL_DEBUG
+
 #define DHTTYPE     DHT22
 
 #define RELAY_PIN   D1
@@ -30,6 +32,15 @@
 #define IDX_VAR_VCC_RADIO  12
 #define IDX_VAR_RPM_2MS    13
 
+#define DEBUG_PRINTER Serial
+
+#ifdef SERIAL_DEBUG
+#define DEBUG_PRINT(...) { DEBUG_PRINTER.print(__VA_ARGS__); }
+#define DEBUG_PRINTLN(...) { DEBUG_PRINTER.println(__VA_ARGS__); }
+#else
+#define DEBUG_PRINT(...) {}
+#define DEBUG_PRINTLN(...) {}
+#endif
 
 
 #endif
