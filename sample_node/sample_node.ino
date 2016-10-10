@@ -32,10 +32,10 @@ void setup()
   if (domo.get_servertime(buff)) {
     DEBUG_PRINT("Server Time:"); DEBUG_PRINTLN(buff);
   }
-  if (domo.get_temperature(10, &f, &h, name_buff)) {
+  if (domo.get_temperature(10, &f, name_buff)) {
     DEBUG_PRINT("Temperature Garage:"); DEBUG_PRINTLN(f);
   }
-  if (domo.get_temperature(3, &f, &h, name_buff)) {
+  if (domo.get_temperature(3, &f, name_buff)) {
     DEBUG_PRINT("Temperature Congelateur:"); DEBUG_PRINTLN(f);
   }
 }
