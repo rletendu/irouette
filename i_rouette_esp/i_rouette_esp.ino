@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "domoticz.h"
+#include "protocol.h"
 
 
 
@@ -91,6 +92,7 @@ void loop() {
 bool send_data_frame(void)
 {
   uint8_t i, j, nb_sep;
+  uint8_t tx_error_cnt = 0;
   uint8_t sep[10];
   String message;
 
@@ -149,19 +151,19 @@ bool send_data_frame(void)
   DEBUG_PRINT("-CHARGE:"); DEBUG_PRINTLN((char*)&buff[sep[INDEX_CHARGE] + 1]);
 
   if (domo.update_temperature(IDX_TEMP_INT, temp_int) == false) {
-    return false;
+    tx_error_cnt++;
   }
   if (domo.update_wind(IDX_WIND, wind_dir, wind_speed) == false) {
-    return false;
+    tx_error_cnt++;
   }
   if (domo.update_voltage(IDX_BATTERY, vbat) == false) {
-    return false;
+    tx_error_cnt++;
   }
   if (domo.udpate_temp_hum_baro(IDX_BARO, temp_ext, hum, pressure) == false) {
-    return false;
+    tx_error_cnt++;
   }
   if (domo.update_luminosity(IDX_LUX, lum) == false) {
-    return false;
+    tx_error_cnt++;
   }
   message = "Irouette-Message";
   message += String(':') + String((char*)(&buff[sep[INDEX_YEAR] + 1]));
@@ -172,8 +174,11 @@ bool send_data_frame(void)
   message += String('_') + String(((char*)&buff[sep[INDEX_SEC] + 1]));
   message += String('_') + String(((char*)&buff[sep[INDEX_MODE] + 1]));
   message.toCharArray(buff, BUFF_MAX);
-  DEBUG_PRINT("-Sending LOG:");DEBUG_PRINTLN(buff);
+  DEBUG_PRINT("-Sending LOG:"); DEBUG_PRINTLN(buff);
   if (domo.send_log_message(buff) == false) {
+    tx_error_cnt++;
+  }
+  if (tx_error_cnt) {
     return false;
   }
   return true;
@@ -194,7 +199,7 @@ bool build_param_frame(void)
   char var_vcc_light[8];
   char var_vcc_radio[8];
   char var_rpm_2_ms[8];
-  
+
   uint8_t i;
   char c;
   uint16_t t_rise;
