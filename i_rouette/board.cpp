@@ -59,7 +59,8 @@ void board_init(void)
   pinMode(LED_RED_RIGHT_PIN, OUTPUT);
   pinMode(LED_RED_LEFT_PIN, OUTPUT);
 
-
+  pinMode(LED_BLINK_PIN, OUTPUT);
+  
   pinMode(WAKEUP_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
 
@@ -197,10 +198,26 @@ void led_green_left(bool en)
   }
 }
 
+void led_blink(bool en)
+{
+  if (en) {
+    digitalWrite(LED_BLINK_PIN, 1);
+  } else {
+    digitalWrite(LED_BLINK_PIN, 0);
+  }
+}
 
 
-
-
+void led_error_code(uint8_t code)
+{
+  uint8_t i;
+  for (i = 0; i < code; i++) {
+    led_tail(true);
+    delay(500);
+    led_tail(false);
+    delay(500);
+  }
+}
 
 void all_led_off(void)
 {
@@ -213,6 +230,8 @@ void all_led_off(void)
   led_red_right(false);
   led_green_right(false);
   led_green_left(false);
+  
+  led_blink(false);
 }
 
 
@@ -226,4 +245,5 @@ void all_led_on(void)
   led_red_right(true);
   led_green_right(true);
   led_green_left(true);
+  led_blink(true);
 }

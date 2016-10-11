@@ -214,25 +214,25 @@ void radio_task(void)
     setup_tx_frame();
     if (radio_send(buff)) {
       DEBUG_PRINTLN(F("-Radio Tx OK"));
-      for (i = 0; i < BUFF_MAX; i++) {
-        buff[i] = 0;
-      }
-      if (radio_get_param(buff)) {
-        DEBUG_PRINTLN(buff);
-        parse_rx_frame();
-      } else {
-        DEBUG_PRINTLN(F("-Radio Rx Param Fail"));
-        goto radio_end;
-      }
     } else {
+      led_error_code(ERROR_TX);
       DEBUG_PRINTLN(F("-Radio Tx Fail"));
-      goto radio_end;
+    }
+    for (i = 0; i < BUFF_MAX; i++) {
+      buff[i] = 0;
+    }
+    if (radio_get_param(buff)) {
+      DEBUG_PRINTLN(buff);
+      parse_rx_frame();
+    } else {
+      led_error_code(ERROR_RX);
+      DEBUG_PRINTLN(F("-Radio Rx Param Fail"));
     }
   }
   else {
+    led_error_code(ERROR_CONNECT);
     DEBUG_PRINTLN(F("-Radio Not Connected"));
   }
-radio_end:
   radio_disconnect();
   radio_enable(false);
 }
@@ -395,6 +395,7 @@ void sensor_debug_loop(void) {
 void led_task(void)
 {
   uint8_t i;
+  all_led_off();
 #ifdef FORCE_FREEZE
   {
 #else
@@ -407,9 +408,9 @@ void led_task(void)
       all_led_off();
       delay(100);
     }
+    led_blink(true);
   }
 
-  all_led_off();
   led_tail(true);
 
   if (sensors_val.vbat > (param.vcc_light_min + 0.1) ) {

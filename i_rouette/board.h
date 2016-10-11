@@ -16,7 +16,7 @@
 #define WAKEUP_PIN          2
 #define LED_GREEN_LEFT_PIN  3
 #define VCC_EN_PIN          4
-#define _D5_PIN             5
+#define LED_BLINK_PIN       5
 #define DHT_PIN             6
 #define LED_GREEN_RIGHT_PIN 7
 #define LED_RED_RIGHT_PIN   8
@@ -35,6 +35,7 @@ enum ChargeState get_charge_status(void);
 void cpu_8MHZ(void);
 void cpu_250KHZ(void);
 void beep(uint8_t nb_beep, bool len);
+void led_blink(bool en);
 void led_tail(bool en);
 void led_white(bool en);
 void led_blue_head(bool en);
@@ -45,7 +46,7 @@ void led_red_right(bool en);
 void led_green_right(bool en);
 void led_green_left(bool en);
 
-
+void led_error_code(uint8_t code);
 
 void all_led_off(void);
 void all_led_on(void);

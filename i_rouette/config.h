@@ -34,6 +34,11 @@
 
 #define HEADING_MECHANICAL_CORRECTION (float)((-62)*PI/180)
 
+
+#define ERROR_CONNECT           2
+#define ERROR_TX                3
+#define ERROR_RX                4
+
 enum OperatingMode {
   DAY = 0,
   NIGHT_LIGHT_ON = 1,
