@@ -1,23 +1,34 @@
 #include "config.h"
 #include "board.h"
-#include <HMC5883L.h>
+
 #include <SFE_BMP180.h>
 #include "DHT.h"
 #include "my_sensors.h"
 #include <avr/wdt.h>
 
+#ifdef USE_ADAFRUIT_MAG_LIB
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_HMC5883_U.h>
+Adafruit_HMC5883_Unified mag = Adafruit_HMC5883_Unified(12345);
+#else
+#include <HMC5883L.h>
+HMC5883L compass;
+#endif
 
 DHT dht(DHT_PIN, DHT22);
 SFE_BMP180 pressure;
-HMC5883L compass;
-
 
 void sensors_init() {
   pressure.begin();
   dht.begin();
+#ifdef USE_ADAFRUIT_MAG_LIB
+  mag.begin();
+#else
   compass = HMC5883L();
   compass.SetScale(1.3);
   compass.SetMeasurementMode(Measurement_Continuous);
+#endif
 }
 
 void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_2_ms) {
@@ -61,8 +72,6 @@ void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_
       }
     }
   }
-
-
   tmp = dht.readHumidity();
   if ( !isnan(tmp) ) {
     val->humidity = tmp;
@@ -71,10 +80,14 @@ void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_
   if ( !isnan(tmp) ) {
     val->temp_ext = tmp;
   }
-
+#ifdef USE_ADAFRUIT_MAG_LIB
+  sensors_event_t event;
+  mag.getEvent(&event);
+  heading = atan2(event.magnetic.y, event.magnetic.x);
+#else
   MagnetometerScaled scaled = compass.ReadScaledAxis(); //scaled values from compass.
   heading = atan2(scaled.YAxis, scaled.XAxis);
-
+#endif
   heading += HEADING_MECHANICAL_CORRECTION;
   // Correct for when signs are reversed.
   if (heading < 0) heading += 2 * PI;

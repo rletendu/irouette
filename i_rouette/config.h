@@ -10,6 +10,8 @@
 //#define FORCE_NIGHT_MODE
 //#define FORCE_FREEZE
 
+#define USE_ADAFRUIT_MAG_LIB
+
 
 #define RADIO_BAUD               9600
 
