@@ -1,7 +1,7 @@
 #ifndef __CONFIG_DOMOTICZ_H__
 #define __CONFIG_DOMOTICZ_H__
 
-#define DOMOTICZ_DEBUG
+//#define DOMOTICZ_DEBUG
 
 
 #define DOMOTICZ_SERVER "192.168.2.201"
