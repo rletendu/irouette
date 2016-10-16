@@ -10,12 +10,15 @@ void client_task(void);
 ADC_MODE(ADC_VCC);
 char buff[100];
 char name_buff[20];
+char sw_status[20];
 
 void setup()
 {
   float f;
   uint8_t h;
-  Serial.begin(9600);
+  uint16_t p;
+
+  Serial.begin(115200);
   DEBUG_PRINTLN("Starting");
   DEBUG_PRINT("Esp Vcc: "); DEBUG_PRINTLN(ESP.getVcc());
 
@@ -38,6 +41,16 @@ void setup()
   if (domo.get_temperature(3, &f, name_buff)) {
     DEBUG_PRINT("Temperature Congelateur:"); DEBUG_PRINTLN(f);
   }
+  if (domo.get_voltage(6, &f, name_buff)) {
+    DEBUG_PRINT("Girouette Batterie:"); DEBUG_PRINTLN(f);
+  }
+  if (domo.get_temp_hum_baro(5, &f, &h, &p, name_buff)) {
+    DEBUG_PRINT(name_buff); DEBUG_PRINT(" :" ); DEBUG_PRINT("T:"); DEBUG_PRINT(f); DEBUG_PRINT(" Hum:"); DEBUG_PRINT(h); DEBUG_PRINT(" Pression:")DEBUG_PRINTLN(p);
+  }
+  if (domo.get_switch_status(9, sw_status, name_buff)) {
+    DEBUG_PRINT(name_buff); DEBUG_PRINT(" :" ); DEBUG_PRINT("Status:"); DEBUG_PRINTLN(sw_status);
+  }
+  DEBUG_PRINTLN(ARDUINO);
 }
 
 void loop() {
@@ -91,7 +104,7 @@ void client_task(void)
 
 /*
 
-{
+  {
    "ActTime" : 1475089965,
    "ServerTime" : "2016-09-28 21:12:45",
    "Sunrise" : "08:00",
@@ -138,6 +151,6 @@ void client_task(void)
    ],
    "status" : "OK",
    "title" : "Devices"
-}
+  }
 */
 
