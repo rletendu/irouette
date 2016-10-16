@@ -2,7 +2,7 @@
 #define __BOARD_H__
 
 // Pins Assignement
-#define _A0_PIN             A0
+#define LED_BLINK_PIN       A0
 #define RAIN_PIN            A1
 #define LED_BLUE_HEAD_PIN   A2
 #define LED_GREEN_HEAD_PIN  A3
@@ -16,7 +16,7 @@
 #define WAKEUP_PIN          2
 #define LED_GREEN_LEFT_PIN  3
 #define VCC_EN_PIN          4
-#define LED_BLINK_PIN       5
+#define RPM_CAPTURE_PIN     5
 #define DHT_PIN             6
 #define LED_GREEN_RIGHT_PIN 7
 #define LED_RED_RIGHT_PIN   8
