@@ -4,9 +4,9 @@
 #define SERIAL_DEBUG
 
 #define DHTTYPE       DHT22
-#define DHT_PIN       D4
+// #define DHT_PIN       D4
 
-#define DS18B20_PIN   D1
+// #define DS18B20_PIN   D1
 
 
 // Domoticz Server IDx configuration
