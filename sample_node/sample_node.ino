@@ -2,15 +2,61 @@
 #include "config.h"
 #include "domoticz/domoticz.h"
 
+#ifdef DS18B20_PIN
+#include <OneWire.h>
+#include <DallasTemperature.h>
+OneWire oneWire(DS18B20_PIN);
+DallasTemperature DS18B20(&oneWire);
+#endif
+
+#ifdef DHT_PIN
+#include <DHT.h>
+DHT dht(DHT_PIN, DHTTYPE);
+#endif
+
 
 Domoticz domo = Domoticz();
 WiFiServer server(80);
 void client_task(void);
 
-ADC_MODE(ADC_VCC);
+
 char buff[100];
 char name_buff[20];
 char sw_status[20];
+
+#ifdef DHT_PIN
+bool update_dht_temperature(float *temp, float *hum)
+{
+  dht.begin();
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+  if (isnan(h) || isnan(t)) {
+    DEBUG_PRINTLN("Failed reading DHT sensor!");
+    return false;
+  }
+  DEBUG_PRINT("DHT Temperature: "); DEBUG_PRINTLN(t, 2);
+  DEBUG_PRINT("DHT Humidity: "); DEBUG_PRINTLN(h, 2);
+  *temp = t;
+  *hum = h;
+  return true;
+}
+#endif
+
+#ifdef DS18B20_PIN
+bool update_ds18b20_temperature(float *temp)
+{
+  float t;
+  DS18B20.begin();
+  DS18B20.requestTemperatures(); 
+  t = DS18B20.getTempCByIndex(0);
+  if (isnan(t)) {
+    DEBUG_PRINTLN("Failed reading DS18B20!");
+    return false;
+  }
+  DEBUG_PRINT("DS18B20 Temperature: "); DEBUG_PRINTLN(t, 2);
+  *temp = t;
+}
+#endif
 
 void setup()
 {
@@ -55,13 +101,13 @@ void setup()
 
 void loop() {
 
-  client_task();
+  server_task();
 }
 
 
 
 
-void client_task(void)
+void server_task(void)
 {
   WiFiClient client = server.available();
   if (!client) {
@@ -98,7 +144,7 @@ void client_task(void)
   // Send the response to the client
   client.print(s);
   delay(1);
-  DEBUG_PRINTLN("Client disonnected");
+  DEBUG_PRINTLN("Client disconnected");
 }
 
 
