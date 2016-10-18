@@ -42,8 +42,8 @@ void setup()
 {
   WiFi.disconnect();
   WiFi.mode(WIFI_STA);
-  Serial.begin(9600);
-  Serial.println("Starting");
+  Serial.begin(115200);
+  Serial.println("\nStarting");
 
 
 
