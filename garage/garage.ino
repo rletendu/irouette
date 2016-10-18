@@ -53,7 +53,7 @@ void setup()
 {
   WiFi.disconnect();
   WiFi.mode(WIFI_STA);
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("Starting");
 
   pinMode(SENSE_PIN, INPUT_PULLUP);
