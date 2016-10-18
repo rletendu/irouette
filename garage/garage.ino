@@ -89,6 +89,9 @@ void loop() {
       domo.udpate_temp_hum(IDX_GARAGE_TEMP, temperature, humidity);
       update_temperature_time = millis() + 1000 * 60 * UPDATE_TEMPERATURE_DELAY;
     }
+    if (update_door_status() == false) {
+      ESP.restart();
+    }
   }
   if (isr) {
     delay(2000);
@@ -105,7 +108,7 @@ bool update_door_status(void)
 {
   if (digitalRead(SENSE_PIN) ) {
     Serial.println("Door Openned");
-    if (domo.update_switch(IDX_GARAGE_DOOR, false)) {
+    if (domo.update_switch(IDX_GARAGE_DOOR, true)) {
       Serial.println("Update Open OK ...");;
     } else {
       Serial.println("Update Open KO ...");;
@@ -113,7 +116,7 @@ bool update_door_status(void)
 
   } else {
     Serial.println("Door Closed");
-    domo.update_switch(IDX_GARAGE_DOOR, true);
+    domo.update_switch(IDX_GARAGE_DOOR, false);
   }
 }
 
