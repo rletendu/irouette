@@ -5,19 +5,10 @@
 // #define IROUETTE_ESP_DEBUG
 
 
-#define DOMO_CONNECT 1
-
-#if (DOMO_CONNECT==1)
-  #define DOMOTICZ_SERVER "192.168.2.201"
-  #define DOMOTICZ_PORT 8080
-  #define MYSSID "domo"
-  #define PASSWD "pulsar est content"
-#elif (DOMO_CONNECT==2)
-  #define DOMOTICZ_SERVER "rletendu.no-ip.org"
-  #define DOMOTICZ_PORT 8080
-  #define MYSSID "honor6"
-  #define PASSWD "pulsar44"
-#endif
+#define DOMOTICZ_SERVER "192.168.2.201"
+#define DOMOTICZ_PORT 8080
+#define MYSSID "domo"
+#define PASSWD "pulsar est content"
 
 // Domoticz Server IDx configuration
 #define IDX_WIND          4
