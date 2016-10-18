@@ -2,7 +2,7 @@
 #include <ArduinoJson.h>
 
 #include "config.h"
-#include "domoticz.h"
+#include "domoticz/domoticz.h"
 #include "protocol.h"
 
 

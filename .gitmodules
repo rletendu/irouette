@@ -7,3 +7,6 @@
 [submodule "sample_node/domoticz"]
 	path = sample_node/domoticz
 	url = https://github.com/rletendu/domoticz
+[submodule "i_rouette_esp/domoticz"]
+	path = i_rouette_esp/domoticz
+	url = https://github.com/rletendu/domoticz
