@@ -49,10 +49,18 @@ bool update_dht_temperature(float *temp, float *hum)
 #ifdef DS18B20_PIN
 bool update_ds18b20_temperature(float *temp)
 {
-  float t;
+  float t, t2;
+  oneWire.reset();
   DS18B20.begin();
+  DS18B20.setWaitForConversion(true);
   DS18B20.requestTemperatures();
-  t = DS18B20.getTempCByIndex(0);
+  if (DS18B20.getDeviceCount() > 1 ) {
+    t = DS18B20.getTempCByIndex(0);
+    t2 = DS18B20.getTempCByIndex(1);
+    DEBUG_PRINT("DS18B20 Temperature 2: "); DEBUG_PRINTLN(t2, 2);
+  } else {
+    t = DS18B20.getTempCByIndex(0);
+  }
   pinMode(DS18B20_PIN, OUTPUT);
   digitalWrite(DS18B20_PIN, LOW);
   if (isnan(t)) {
