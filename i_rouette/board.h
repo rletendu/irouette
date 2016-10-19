@@ -30,7 +30,6 @@
 
 void board_init(void);
 void vcc_sensor_enable(bool en);
-void radio_enable(bool en);
 enum ChargeState get_charge_status(void);
 void cpu_8MHZ(void);
 void cpu_250KHZ(void);

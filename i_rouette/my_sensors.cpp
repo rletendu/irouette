@@ -31,6 +31,11 @@ void sensors_init() {
 #endif
 }
 
+float get_vbat(void) {
+  analogRead(REF25_PIN);
+  return ((2.5 * 1024) / analogRead(REF25_PIN));
+}
+
 void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_2_ms) {
   char status;
   double int_temperature, int_pressure;
@@ -44,9 +49,7 @@ void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_
   wdt_reset();
   sensors_init();
 
-  val->vbat = (2.5 * 1024) / analogRead(REF25_PIN);
-  val->vbat = (2.5 * 1024) / analogRead(REF25_PIN);
-
+  val->vbat = get_vbat();
   val->lum = analogRead(LDR_PIN);
   val->rain = analogRead(RAIN_PIN);
 

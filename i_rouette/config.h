@@ -7,6 +7,7 @@
 
 #define SERIAL_DEBUG
 //#define DEBUG_SENSOR_ONLY
+//#define DEBUG_RADIO_CONNECT_ONLY
 //#define FORCE_NIGHT_MODE
 //#define FORCE_FREEZE
 
@@ -26,9 +27,10 @@
 #define DEFAULT_SUNRISE_TIME     8*60
 #define DEFAULT_RPM_MEASURE_TIME 5
 #define DEFAULT_VBAT_LIGHT_MIN   3.5    // The minimal Vcc Level to keep light active
-#define DEFAULT_VBAT_RADIO_MIN   3.3 
+#define DEFAULT_VBAT_RADIO_MIN   3.3
 #define DEFAULT_RPM_2_MS         1.25
 
+#define TIMEOUT_PING             1*1000
 #define TIMEOUT_CONNECT          20*1000
 #define TIMEOUT_TX               20*1000
 #define TIMEOUT_RX               20*1000
@@ -36,10 +38,14 @@
 
 #define HEADING_MECHANICAL_CORRECTION (float)((-62)*PI/180)
 
+#define RADIO_CONNECT_ATTEMPT   2
+#define RADIO_SYNC_ATTEMPT      3
 
-#define ERROR_CONNECT           2
-#define ERROR_TX                3
-#define ERROR_RX                4
+#define ERROR_SYNC              2
+#define ERROR_CONNECT           3
+#define ERROR_TX                4
+#define ERROR_RX                5
+
 
 enum OperatingMode {
   DAY = 0,

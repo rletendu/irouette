@@ -59,6 +59,20 @@ void setup() {
   DEBUG_PRINT( F(", "));
   DEBUG_PRINT( F(__TIME__));
 
+#ifdef  DEBUG_RADIO_CONNECT_ONLY
+  DEBUG_PRINTLN(F("DEBUG_RADIO_CONNECT_ONLY !!! "));
+  while (1) {
+    vcc_sensor_enable(true);
+    DEBUG_PRINTLN(F("Sensor Job"));
+
+    radio_task();
+    vcc_sensor_enable(false);
+    delay(5000);
+  }
+
+
+#endif
+
   param.valid_sig = VALID_SIG;
   param.night_mode_lum = DEFAULT_NIGHT_MODE_LUM;
   param.sleep_period = DEFAULT_SLEEP_PERIOD;
@@ -121,38 +135,36 @@ void loop()
     }
 
     wdt_enable(WDTO_8S);
-    DEBUG_PRINTLN(F("- RTC Wakeup !"));
+    DEBUG_PRINTLN(F(" - RTC Wakeup !"));
     rtc_wake = false;
 
-    // Update Sensors Values
-    charge_status = get_charge_status();
-    DEBUG_PRINTLN(F("- Sensors Update"));
     vcc_sensor_enable(true);
-    rtc_get_time(&rtc_time);
-    wdt_reset();
-    sensors_update(&sensors_val, param.rpm_measure_time, param.rpm_2_ms);
-    vcc_sensor_enable(false);
-    debug_sensors();
 
-    // Send Sensor Values to server and get updated parameters from server
-    if (sensors_val.vbat > param.vcc_radio_min) {
-      DEBUG_PRINTLN(F("- Radio Task"));
+    if (get_vbat() > param.vcc_radio_min ) {
+      // Update Sensors Values
+      charge_status = get_charge_status();
+      DEBUG_PRINTLN(F(" - Sensors Update"));
+      rtc_get_time(&rtc_time);
+      wdt_reset();
+      sensors_update(&sensors_val, param.rpm_measure_time, param.rpm_2_ms);
+      debug_sensors();
+
+      // Send Sensor Values to server and get updated parameters from server
+      DEBUG_PRINTLN(F(" - Radio Task"));
       wdt_disable();
       radio_task();
       wdt_reset();
       wdt_enable(WDTO_8S);
-    } else {
-      DEBUG_PRINTLN(F("- Skipping Radio Task"));
       wdt_reset();
+      debug_param();
+      wdt_reset();
+    } else {
+      DEBUG_PRINTLN(F(" - Skipping Sensor update and Radio Task"));
     }
 
-    debug_param();
-    wdt_reset();
-
     // Setup next wakeup by RTC
-    DEBUG_PRINTLN(F("- Setup next wakeup time"));
+    DEBUG_PRINTLN(F(" - Setup next wakeup time"));
     wdt_reset();
-    vcc_sensor_enable(true);
     rtc_ack_alarm();
     rtc_next_alarm(param.sleep_period);
     vcc_sensor_enable(false);
@@ -165,14 +177,14 @@ void loop()
       // Check Vbat level and Luminosity level to turn light On
       if (sensors_val.lum < param.night_mode_lum && sensors_val.vbat > param.vcc_light_min ) {
         mode = NIGHT_LIGHT_ON;
-        DEBUG_PRINTLN(F("- Mode NIGHT_LIGHT_ON"));
+        DEBUG_PRINTLN(F(" - Mode NIGHT_LIGHT_ON"));
       } else {
         mode = NIGHT_LIGHT_OFF;
-        DEBUG_PRINTLN(F("- Mode NIGHT_LIGHT_OFF"));
+        DEBUG_PRINTLN(F(" - Mode NIGHT_LIGHT_OFF"));
       }
     } else {
       mode = DAY;
-      DEBUG_PRINTLN(F("- Mode DAY"));
+      DEBUG_PRINTLN(F(" - Mode DAY"));
     }
 #ifdef FORCE_NIGHT_MODE
     mode = NIGHT_LIGHT_ON;
@@ -185,13 +197,13 @@ void loop()
     case DAY:
     case NIGHT_LIGHT_OFF:
       all_led_off();
-      DEBUG_PRINTLN(F("- Sleeping Day or Light off mode"));
+      DEBUG_PRINTLN(F(" - Sleeping Day or Light off mode"));
       LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
       break;
 
     case NIGHT_LIGHT_ON:
       led_task();
-      DEBUG_PRINTLN(F("- Sleeping Light On mode"));
+      DEBUG_PRINTLN(F(" - Sleeping Light On mode"));
       if (sensors_val.vbat > (param.vcc_light_min + 0.1) ) {
         LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
       } else {
@@ -207,34 +219,39 @@ void loop()
 void radio_task(void)
 {
   uint8_t i;
-
-  radio_enable(true);
-  if (radio_connect()) {
-    DEBUG_PRINTLN(F("-Radio Connected"));
-    setup_tx_frame();
-    if (radio_send(buff)) {
-      DEBUG_PRINTLN(F("-Radio Tx OK"));
-    } else {
-      led_error_code(ERROR_TX);
-      DEBUG_PRINTLN(F("-Radio Tx Fail"));
-    }
-    for (i = 0; i < BUFF_MAX; i++) {
-      buff[i] = 0;
-    }
-    if (radio_get_param(buff)) {
-      DEBUG_PRINTLN(buff);
-      parse_rx_frame();
-    } else {
-      led_error_code(ERROR_RX);
-      DEBUG_PRINTLN(F("-Radio Rx Param Fail"));
-    }
+  if ( radio_sync() == false) {
+    led_error_code(ERROR_SYNC);
+    DEBUG_PRINTLN(F(" - Radio Sync Error"));
+    return;
   }
-  else {
+  DEBUG_PRINTLN(F(" - Radio Sync"));
+
+  if (radio_connect() == false) {
     led_error_code(ERROR_CONNECT);
-    DEBUG_PRINTLN(F("-Radio Not Connected"));
+    DEBUG_PRINTLN(F(" - Radio Not Connected"));
+    return;
+  }
+  DEBUG_PRINTLN(F(" - Radio Connected"));
+
+  setup_tx_frame();
+  if (radio_send(buff) == false) {
+    led_error_code(ERROR_TX);
+    DEBUG_PRINTLN(F(" - Radio Tx Fail"));
+  }
+  DEBUG_PRINTLN(F(" - Radio Tx OK"));
+
+  for (i = 0; i < BUFF_MAX; i++) {
+    buff[i] = 0;
+  }
+  if (radio_get_param(buff) == false) {
+    led_error_code(ERROR_RX);
+    DEBUG_PRINTLN(F(" - Radio Rx Param Fail"));
+  } else {
+    DEBUG_PRINTLN(F(" - Radio Rx Param OK"));
+    DEBUG_PRINTLN(buff);
+    parse_rx_frame();
   }
   radio_disconnect();
-  radio_enable(false);
 }
 
 
@@ -244,37 +261,37 @@ uint8_t setup_tx_frame(void)
   char remain = BUFF_MAX;
   char str_temp[6];
 
-  snprintf(&buff[index], remain, ":D|%d|%02d|%02d|%02d|%02d|%02d",
+  snprintf(&buff[index], remain, ": D | % d | % 02d | % 02d | % 02d | % 02d | % 02d",
            rtc_time.year, rtc_time.mon, rtc_time.mday, rtc_time.hour, rtc_time.min, rtc_time.sec);
 
   index = strlen(buff); remain -= index;
   dtostrf(sensors_val.temp_ext, 3, 1, str_temp);
-  snprintf(&buff[index], remain, "|%s", str_temp);
+  snprintf(&buff[index], remain, " | % s", str_temp);
 
   index = strlen(buff); remain -= index;
   dtostrf(sensors_val.temp_int, 3, 1, str_temp);
-  snprintf(&buff[index], remain, "|%s", str_temp);
+  snprintf(&buff[index], remain, " | % s", str_temp);
 
   index = strlen(buff); remain -= index;
   dtostrf(sensors_val.pressure, 3, 1, str_temp);
-  snprintf(&buff[index], remain, "|%s", str_temp);
+  snprintf(&buff[index], remain, " | % s", str_temp);
 
   index = strlen(buff); remain -= index;
-  snprintf(&buff[index], remain, "|%d", sensors_val.lum);
+  snprintf(&buff[index], remain, " | % d", sensors_val.lum);
 
   index = strlen(buff); remain -= index;
   dtostrf(sensors_val.humidity, 3, 1, str_temp);
-  snprintf(&buff[index], remain, "|%s", str_temp);
+  snprintf(&buff[index], remain, " | % s", str_temp);
 
   index = strlen(buff); remain -= index;
-  snprintf(&buff[index], remain, "|%d", sensors_val.rain);
+  snprintf(&buff[index], remain, " | % d", sensors_val.rain);
 
   index = strlen(buff); remain -= index;
   dtostrf(sensors_val.vbat, 3, 2, str_temp);
-  snprintf(&buff[index], remain, "|%s", str_temp);
+  snprintf(&buff[index], remain, " | % s", str_temp);
 
   index = strlen(buff); remain -= index;
-  snprintf(&buff[index], remain, "|%d|%d|%d|%d", sensors_val.wind_dir, sensors_val.wind_speed, mode, charge_status);
+  snprintf(&buff[index], remain, " | % d | % d | % d | % d", sensors_val.wind_dir, sensors_val.wind_speed, mode, charge_status);
   DEBUG_PRINT("Tx Frame "); DEBUG_PRINTLN(buff);
 
   return strlen(buff);
@@ -344,7 +361,7 @@ void debug_sensors(void)
   DEBUG_PRINTLN();
   // display current time
   DEBUG_PRINTLN(F("-------- Sensors --------"));
-  snprintf(buff, BUFF_MAX, "\tRTC: %d.%02d.%02d %02d:%02d:%02d", rtc_time.year,
+  snprintf(buff, BUFF_MAX, "\tRTC: % d. % 02d. % 02d % 02d: % 02d: % 02d", rtc_time.year,
            rtc_time.mon, rtc_time.mday, rtc_time.hour, rtc_time.min, rtc_time.sec);
   DEBUG_PRINTLN(buff);
   DEBUG_PRINT(F("\tCharge State: "));
@@ -359,11 +376,11 @@ void debug_sensors(void)
   DEBUG_PRINTLN(sensors_val.temp_int, 2);
   DEBUG_PRINT(F("\tTemp ext: "));
   DEBUG_PRINTLN(sensors_val.temp_ext, 2);
-  DEBUG_PRINT(F("\tPressure:"));
+  DEBUG_PRINT(F("\tPressure: "));
   DEBUG_PRINTLN(sensors_val.pressure, 2);
   DEBUG_PRINT(F("\tLuminosity: "));
   DEBUG_PRINTLN(sensors_val.lum);
-  DEBUG_PRINT(F("\tHumidity:"));
+  DEBUG_PRINT(F("\tHumidity: "));
   DEBUG_PRINTLN(sensors_val.humidity, 2);
 }
 

@@ -7,29 +7,18 @@ void vcc_sensor_enable(bool en)
 {
   if (en) {
     digitalWrite(VCC_EN_PIN, 1);
-    delay(2500);
+    pinMode(TX_PIN, OUTPUT);
+    digitalWrite(TX_PIN, 1);
+    delay(1000);
+    Serial.begin(RADIO_BAUD);
   } else {
+    Serial.end();
+    pinMode(TX_PIN, OUTPUT);
+    digitalWrite(TX_PIN, 0);
     digitalWrite(VCC_EN_PIN, 0);
   }
 }
 
-void radio_enable(bool en)
-{
-  if (en) {
-    vcc_sensor_enable(false);
-
-    delay(1000);
-    Serial.end();
-    Serial.begin(RADIO_BAUD);
-    vcc_sensor_enable(true);
-
-    delay(2000);
-  } else {
-    Serial.end();
-    pinMode(TX_PIN, OUTPUT);
-    vcc_sensor_enable(false);
-  }
-}
 
 enum ChargeState get_charge_status(void) {
   /*
@@ -47,7 +36,7 @@ void board_init(void)
   cpu_8MHZ();
   pinMode(VCC_EN_PIN, OUTPUT);
   vcc_sensor_enable(false);
-  radio_enable(false);
+
   pinMode(LEDS_WHITE_PIN, OUTPUT);
 
   pinMode(LED_TAIL_PIN, OUTPUT);
@@ -60,7 +49,7 @@ void board_init(void)
   pinMode(LED_RED_LEFT_PIN, OUTPUT);
 
   pinMode(LED_BLINK_PIN, OUTPUT);
-  
+
   pinMode(WAKEUP_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
 
@@ -211,6 +200,8 @@ void led_blink(bool en)
 void led_error_code(uint8_t code)
 {
   uint8_t i;
+  all_led_off();
+  delay(500);
   for (i = 0; i < code; i++) {
     led_tail(true);
     delay(500);
@@ -230,7 +221,7 @@ void all_led_off(void)
   led_red_right(false);
   led_green_right(false);
   led_green_left(false);
-  
+
   led_blink(false);
 }
 
