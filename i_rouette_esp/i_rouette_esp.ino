@@ -5,8 +5,6 @@
 #include "domoticz/domoticz.h"
 #include "protocol.h"
 
-
-
 // Define where debug output will be printed.
 #define DEBUG_PRINTER Serial
 
@@ -48,6 +46,7 @@ void loop() {
       status_ko();
     } else {
       switch (buff[1]) {
+        // Connect to Wifi command
         case 'C':
           if (domo.begin()) {
             status_ok();
@@ -56,6 +55,7 @@ void loop() {
           }
           break;
 
+        // Send Data Frame to Domoticz server command
         case 'D':
           if (send_data_frame()) {
             status_ok();
@@ -64,6 +64,7 @@ void loop() {
           }
           break;
 
+        // Receive Param Frame from Domoticz server command
         case 'P':
           if (build_param_frame()) {
             Serial.println(buff);
@@ -72,6 +73,7 @@ void loop() {
           }
           break;
 
+        // Sleep command Request
         case 'S':
           status_ok();
           delay(100);
@@ -80,12 +82,17 @@ void loop() {
           delay(100);
           break;
 
+        // Ping command (check correct communication with ESP serial)
+        case 'p':
+          status_ok();
+          break;
+
+        // Unknown command
         default:
           status_ko();
           break;
       }
     }
-
   }
 }
 

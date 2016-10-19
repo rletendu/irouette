@@ -2,6 +2,7 @@
 #define __CONFIG_DOMOTICZ_H__
 
 // #define DOMOTICZ_DEBUG
+// #define DEBUG_DOMO_PRINTER Serial
 
 #define DOMOTICZ_SEND_VBAT
 #define DOMOTICZ_VBAT_MIN 2000
