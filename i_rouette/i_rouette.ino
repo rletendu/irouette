@@ -59,20 +59,6 @@ void setup() {
   DEBUG_PRINT( F(", "));
   DEBUG_PRINT( F(__TIME__));
 
-#ifdef  DEBUG_RADIO_CONNECT_ONLY
-  DEBUG_PRINTLN(F("DEBUG_RADIO_CONNECT_ONLY !!! "));
-  while (1) {
-    vcc_sensor_enable(true);
-    DEBUG_PRINTLN(F("Sensor Job"));
-
-    radio_task();
-    vcc_sensor_enable(false);
-    delay(5000);
-  }
-
-
-#endif
-
   param.valid_sig = VALID_SIG;
   param.night_mode_lum = DEFAULT_NIGHT_MODE_LUM;
   param.sleep_period = DEFAULT_SLEEP_PERIOD;
@@ -83,6 +69,27 @@ void setup() {
   param.vcc_radio_min = DEFAULT_VBAT_RADIO_MIN;
   param.rpm_2_ms = DEFAULT_RPM_2_MS;
   debug_param();
+
+#ifdef  DEBUG_RADIO_CONNECT_ONLY
+  rtc_time.year = 2016;
+  rtc_time.mon = 8;
+  rtc_time.mday = 20;
+  rtc_time.hour = 16;
+  rtc_time.min = 41;
+  rtc_time.sec = 0;
+  DEBUG_PRINTLN(F("DEBUG_RADIO_CONNECT_ONLY !!! "));
+  while (1) {
+    vcc_sensor_enable(true);
+    DEBUG_PRINTLN(F("Sensor Job"));
+    sensors_update(&sensors_val, param.rpm_measure_time, param.rpm_2_ms);
+    radio_task();
+    vcc_sensor_enable(false);
+    delay(5000);
+  }
+#endif
+#ifdef DEBUG_SENSOR_ONLY
+  sensor_debug_loop();
+#endif
 
   vcc_sensor_enable(true);
   rtc_init();
@@ -118,9 +125,7 @@ void rtc_wakeUp()
 void loop()
 {
   uint8_t i;
-#ifdef DEBUG_SENSOR_ONLY
-  sensor_debug_loop();
-#endif
+
 
   if (rtc_wake) {
     if (mode == NIGHT_LIGHT_ON) {
@@ -254,6 +259,9 @@ void radio_task(void)
   radio_disconnect();
 }
 
+/*
+:D|2016|08|20|16|41|00|7.9|17.8|1015.0|815|60.3|127|3.72|180|7|0|0
+*/
 
 uint8_t setup_tx_frame(void)
 {
@@ -261,37 +269,37 @@ uint8_t setup_tx_frame(void)
   char remain = BUFF_MAX;
   char str_temp[6];
 
-  snprintf(&buff[index], remain, ": D | % d | % 02d | % 02d | % 02d | % 02d | % 02d",
+  snprintf(&buff[index], remain, ":D|%d|%02d|%02d|%02d|%02d|%02d",
            rtc_time.year, rtc_time.mon, rtc_time.mday, rtc_time.hour, rtc_time.min, rtc_time.sec);
 
   index = strlen(buff); remain -= index;
   dtostrf(sensors_val.temp_ext, 3, 1, str_temp);
-  snprintf(&buff[index], remain, " | % s", str_temp);
+  snprintf(&buff[index], remain, "|%s", str_temp);
 
   index = strlen(buff); remain -= index;
   dtostrf(sensors_val.temp_int, 3, 1, str_temp);
-  snprintf(&buff[index], remain, " | % s", str_temp);
+  snprintf(&buff[index], remain, "|%s", str_temp);
 
   index = strlen(buff); remain -= index;
   dtostrf(sensors_val.pressure, 3, 1, str_temp);
-  snprintf(&buff[index], remain, " | % s", str_temp);
+  snprintf(&buff[index], remain, "|%s", str_temp);
 
   index = strlen(buff); remain -= index;
-  snprintf(&buff[index], remain, " | % d", sensors_val.lum);
+  snprintf(&buff[index], remain, "|%d", sensors_val.lum);
 
   index = strlen(buff); remain -= index;
   dtostrf(sensors_val.humidity, 3, 1, str_temp);
-  snprintf(&buff[index], remain, " | % s", str_temp);
+  snprintf(&buff[index], remain, "|%s", str_temp);
 
   index = strlen(buff); remain -= index;
-  snprintf(&buff[index], remain, " | % d", sensors_val.rain);
+  snprintf(&buff[index], remain, "|%d", sensors_val.rain);
 
   index = strlen(buff); remain -= index;
   dtostrf(sensors_val.vbat, 3, 2, str_temp);
-  snprintf(&buff[index], remain, " | % s", str_temp);
+  snprintf(&buff[index], remain, "|%s", str_temp);
 
   index = strlen(buff); remain -= index;
-  snprintf(&buff[index], remain, " | % d | % d | % d | % d", sensors_val.wind_dir, sensors_val.wind_speed, mode, charge_status);
+  snprintf(&buff[index], remain, "|%d|%d|%d|%d", sensors_val.wind_dir, sensors_val.wind_speed, mode, charge_status);
   DEBUG_PRINT("Tx Frame "); DEBUG_PRINTLN(buff);
 
   return strlen(buff);

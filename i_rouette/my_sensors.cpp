@@ -32,11 +32,28 @@ void sensors_init() {
 }
 
 float get_vbat(void) {
+#ifdef DEBUG_USE_VIRTUAL_SENSORS
+  return 3.72;
+#else
   analogRead(REF25_PIN);
   return ((2.5 * 1024) / analogRead(REF25_PIN));
+#endif
 }
 
 void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_2_ms) {
+#ifdef DEBUG_USE_VIRTUAL_SENSORS
+  val->vbat = get_vbat();
+  val->lum = 815;
+  val->rain = 127;
+  val->temp_int = 17.8;
+  val->pressure = 1015;
+  val->humidity = 60.3;
+  val->temp_ext = 7.9;
+  val->wind_dir =  180;
+  val->wind_speed = 7.1;
+  delay(2);
+
+#else
   char status;
   double int_temperature, int_pressure;
   float heading;
@@ -102,5 +119,6 @@ void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_
   }
   val->wind_speed = TCNT1 * (60 / speed_measure_time) * rpm_2_ms;
   TCCR1B = 0x0; TCNT1 = 0;
+#endif
 }
 
