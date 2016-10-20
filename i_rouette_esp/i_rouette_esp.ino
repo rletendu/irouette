@@ -29,7 +29,7 @@ bool send_data_frame(void);
 bool build_param_frame(void);
 void status_ok(void);
 void status_ko(void);
-
+void scan(void);
 void setup() {
   WiFi.disconnect();
   WiFi.mode(WIFI_STA);
@@ -86,6 +86,11 @@ void loop() {
         case 'p':
           status_ok();
           break;
+
+        case 'n':
+           scan();
+           status_ok();
+           break;
 
         // Unknown command
         default:
@@ -299,6 +304,30 @@ void status_ko(void)
   Serial.println("f");
 }
 
+void scan(void)
+{
+  int n = WiFi.scanNetworks();
+  Serial.println("scan done");
+  if (n == 0)
+    Serial.println("no networks found");
+  else
+  {
+    Serial.print(n);
+    Serial.println(" networks found");
+    for (int i = 0; i < n; ++i)
+    {
+      // Print SSID and RSSI for each network found
+      Serial.print(i + 1);
+      Serial.print(": ");
+      Serial.print(WiFi.SSID(i));
+      Serial.print(" (");
+      Serial.print(WiFi.RSSI(i));
+      Serial.print(")");
+      Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE)?" ":"*");
+      delay(10);
+    }
+  }
+}
 
 
 

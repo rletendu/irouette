@@ -1,7 +1,7 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-// #define DOMOTICZ_DEBUG
+
 // #define IROUETTE_ESP_DEBUG
 
 
