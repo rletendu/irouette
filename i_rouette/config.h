@@ -6,8 +6,12 @@
 
 
 #define SERIAL_DEBUG
-//#define DEBUG_SENSOR_ONLY
+
+//#define DEBUG_USE_VIRTUAL_SENSORS
 //#define DEBUG_RADIO_CONNECT_ONLY
+
+//#define DEBUG_SENSOR_ONLY
+
 //#define FORCE_NIGHT_MODE
 //#define FORCE_FREEZE
 
