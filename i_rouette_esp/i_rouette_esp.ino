@@ -31,9 +31,13 @@ void status_ok(void);
 void status_ko(void);
 void scan(void);
 void setup() {
+  Serial.end();
   WiFi.disconnect();
   WiFi.mode(WIFI_STA);
   Serial.begin(9600);
+  while (Serial.available() > 0) {
+    Serial.read();
+  }
 }
 
 void loop() {
@@ -88,9 +92,9 @@ void loop() {
           break;
 
         case 'n':
-           scan();
-           status_ok();
-           break;
+          scan();
+          status_ok();
+          break;
 
         // Unknown command
         default:
@@ -323,7 +327,7 @@ void scan(void)
       Serial.print(" (");
       Serial.print(WiFi.RSSI(i));
       Serial.print(")");
-      Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE)?" ":"*");
+      Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE) ? " " : "*");
       delay(10);
     }
   }

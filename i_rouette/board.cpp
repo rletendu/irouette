@@ -9,7 +9,7 @@ void vcc_sensor_enable(bool en)
     digitalWrite(VCC_EN_PIN, 1);
     pinMode(TX_PIN, OUTPUT);
     digitalWrite(TX_PIN, 1);
-    delay(1000);
+    delay(3000);
     Serial.begin(RADIO_BAUD);
   } else {
     Serial.end();
