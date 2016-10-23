@@ -35,9 +35,9 @@
 #define DEFAULT_RPM_2_MS         1.25
 
 #define TIMEOUT_PING             1*1000
-#define TIMEOUT_CONNECT          20*1000
-#define TIMEOUT_TX               20*1000
-#define TIMEOUT_RX               20*1000
+#define TIMEOUT_CONNECT          25*1000
+#define TIMEOUT_TX               25*1000
+#define TIMEOUT_RX               25*1000
 
 
 #define HEADING_MECHANICAL_CORRECTION (float)((-62)*PI/180)
