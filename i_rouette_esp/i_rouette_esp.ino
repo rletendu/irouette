@@ -30,6 +30,8 @@ bool build_param_frame(void);
 void status_ok(void);
 void status_ko(void);
 void scan(void);
+void clear_buff(void);
+
 void setup() {
   Serial.end();
   WiFi.disconnect();
@@ -43,7 +45,7 @@ void setup() {
 void loop() {
 
   int i;
-
+  clear_buff();
   nb = Serial.readBytesUntil('\n', buff, BUFF_MAX);
   if (nb) {
     if (buff[0] != ':' ) {
@@ -109,7 +111,7 @@ bool send_data_frame(void)
 {
   uint8_t i, j, nb_sep;
   uint8_t tx_error_cnt = 0;
-  uint8_t sep[10];
+  uint8_t sep[INDEX_DATA_MAX+1];
   String message;
 
   char *temp_ext;
@@ -122,7 +124,7 @@ bool send_data_frame(void)
   char *wind_speed;
 
   nb_sep = 0;
-  for (i = 0; i < BUFF_MAX; i++) {
+  for (i = 0; i < sizeof(buff); i++) {
     if (buff[i] == 0) {
       break;
     }
@@ -133,6 +135,7 @@ bool send_data_frame(void)
   }
   if (nb_sep != (INDEX_DATA_MAX + 1)) {
     DEBUG_PRINT("-Incorrect Data Frame "); DEBUG_PRINT(nb_sep); DEBUG_PRINTLN(" Sep found!");
+    domo.send_log_message("Incorrect_data_frame");
     return false;
   }
 
@@ -221,9 +224,7 @@ bool build_param_frame(void)
   uint16_t t_rise;
   uint16_t t_set;
 
-  for (i = 0; i < sizeof(buff); i++) {
-    buff[i] = 0;
-  }
+  clear_buff();
   buff[0] = 'o';
   buff[1] = '|';
   // "2016-08-25 13:58:12"
@@ -335,6 +336,13 @@ void scan(void)
 
 
 
+void clear_buff(void)
+{
+  uint8_t i;
+  for (i = 0; i < sizeof(buff); i++) {
+    buff[i] = 0;
+  }
+}
 
 
 
