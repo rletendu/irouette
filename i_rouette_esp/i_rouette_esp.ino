@@ -20,6 +20,7 @@
 
 #define BUFF_MAX 200
 char    buff[BUFF_MAX];
+char    buff2[BUFF_MAX];
 
 char nb;
 String dataInput;
@@ -110,8 +111,9 @@ void loop() {
 bool send_data_frame(void)
 {
   uint8_t i, j, nb_sep;
+  uint8_t last_char;
   uint8_t tx_error_cnt = 0;
-  uint8_t sep[INDEX_DATA_MAX+1];
+  uint8_t sep[INDEX_DATA_MAX + 1];
   String message;
 
   char *temp_ext;
@@ -123,19 +125,31 @@ bool send_data_frame(void)
   char *wind_dir;
   char *wind_speed;
 
+  memcpy (buff2,buff,sizeof(buff));
+  DEBUG_PRINT("Buff:"); DEBUG_PRINTLN(buff);
+  DEBUG_PRINT("Buff2:"); DEBUG_PRINTLN(buff);
   nb_sep = 0;
   for (i = 0; i < sizeof(buff); i++) {
     if (buff[i] == 0) {
       break;
     }
+    if (buff[i] == '\r') {
+      last_char = i;
+      buff[i] = 0;
+      buff2[i] = 0;
+    }
     if (buff[i] == '|') {
       sep[nb_sep++] = i;
       buff[i] = 0;
+      if (nb_sep > (INDEX_DATA_MAX + 1) ) {
+        break;
+      }
     }
   }
   if (nb_sep != (INDEX_DATA_MAX + 1)) {
     DEBUG_PRINT("-Incorrect Data Frame "); DEBUG_PRINT(nb_sep); DEBUG_PRINTLN(" Sep found!");
     domo.send_log_message("Incorrect_data_frame");
+    domo.send_log_message(buff2);
     return false;
   }
 
