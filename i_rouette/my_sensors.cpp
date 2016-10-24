@@ -42,17 +42,9 @@ float get_vbat(void) {
 
 void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_2_ms) {
 #ifdef DEBUG_USE_VIRTUAL_SENSORS
-  val->vbat = get_vbat();
-  val->lum = 815;
-  val->rain = 127;
-  val->temp_int = 17.8;
-  val->pressure = 1015;
-  val->humidity = 60.3;
-  val->temp_ext = 7.9;
-  val->wind_dir =  180;
-  val->wind_speed = 7.1;
+  val->temp_ext -= 0.1;
+  val->temp_int -= 0.1;
   delay(2);
-
 #else
   char status;
   double int_temperature, int_pressure;
@@ -86,8 +78,12 @@ void sensors_update(struct SensorValues *val, int speed_measure_time, float rpm_
         status = pressure.getPressure(int_pressure, int_temperature);
         if (status != 0)
         {
-          val->temp_int = int_temperature;
-          val->pressure = int_pressure;
+          if ( !isnan(int_temperature) ) {
+            val->temp_int = int_temperature;
+          }
+          if ( !isnan(int_pressure) ) {
+            val->pressure = int_pressure;
+          }
         }
       }
     }

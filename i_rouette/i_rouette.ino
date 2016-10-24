@@ -74,17 +74,29 @@ void setup() {
   rtc_time.year = 2016;
   rtc_time.mon = 8;
   rtc_time.mday = 20;
-  rtc_time.hour = 16;
-  rtc_time.min = 41;
+  rtc_time.hour = 20;
+  rtc_time.min = 10;
   rtc_time.sec = 0;
+ 
+  sensors_val.vbat = get_vbat();
+  sensors_val.lum = 815;
+  sensors_val.rain = 127;
+  sensors_val.temp_int = 12.8;
+  sensors_val.pressure = 1015;
+  sensors_val.humidity = 60.3;
+  sensors_val.temp_ext = 12.6;
+  sensors_val.wind_dir =  180;
+  sensors_val.wind_speed = 7.1;
+
   DEBUG_PRINTLN(F("DEBUG_RADIO_CONNECT_ONLY !!! "));
   while (1) {
     vcc_sensor_enable(true);
+    //rtc_get_time(&rtc_time);
     DEBUG_PRINTLN(F("Sensor Job"));
     sensors_update(&sensors_val, param.rpm_measure_time, param.rpm_2_ms);
     radio_task();
     vcc_sensor_enable(false);
-    delay(5000);
+    delay(100);
   }
 #endif
 #ifdef DEBUG_SENSOR_ONLY

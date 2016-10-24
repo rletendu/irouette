@@ -35,11 +35,25 @@ void rtc_next_alarm(uint8_t minutes_delay)
 
 void rtc_get_time(struct ts *rtc_time)
 {
+#ifdef DEBUG_USE_VIRTUAL_SENSORS
+  rtc_time->min += 10;
+  if (rtc_time->min > 59) {
+    rtc_time->min -= 60;
+    rtc_time->hour += 1;
+    if ( rtc_time->hour > 23) {
+      rtc_time->hour -= 24;
+    }
+  }
+#else
   DS3231_get(rtc_time);
+#endif
 }
 
 void rtc_set_time(struct ts *rtc_time)
 {
+#ifdef DEBUG_USE_VIRTUAL_SENSORS
+
+#else
   struct ts uptime;
   uptime.year = rtc_time->year;
   uptime.mon = rtc_time->mon;
@@ -48,6 +62,7 @@ void rtc_set_time(struct ts *rtc_time)
   uptime.min = rtc_time->min;
   uptime.sec = rtc_time->sec;
   DS3231_set(uptime);
+#endif
 }
 
 void rtc_ack_alarm(void)
