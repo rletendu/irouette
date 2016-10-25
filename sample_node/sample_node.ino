@@ -2,6 +2,12 @@
 #include "config.h"
 #include "domoticz/domoticz.h"
 
+#ifdef ESP8266
+extern "C" {
+#include "user_interface.h"
+}
+#endif
+
 #ifdef DS18B20_PIN
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -83,12 +89,17 @@ void setup()
 
   Serial.begin(115200);
   DEBUG_PRINTLN("\nStarting");
+  DEBUG_PRINT("Rcause : "); DEBUG_PRINTLN(ESP.getResetReason());
+  const rst_info * resetInfo = system_get_rst_info();
+  DEBUG_PRINT("Rcause : "); DEBUG_PRINTLN(resetInfo->reason);
 
+#ifdef DS18B20_PIN
   for (i = 0; i < 2; i++) {
     if (update_ds18b20_temperature(&f)) {
       DEBUG_PRINT("DS temperature: "); DEBUG_PRINTLN(f);
     }
   }
+#endif
 
   if (domo.begin()) {
     DEBUG_PRINTLN("Connect OK");
@@ -136,14 +147,14 @@ void setup()
 
 void loop() {
 
-
-
-
 #if ( SERVER_PORT > 0)
   server_task();
 #endif
 
 #if (DEEP_SLEEP_TIME > 0 )
+  DEBUG_PRINT("Sleeping for "); DEBUG_PRINT(DEEP_SLEEP_TIME); DEBUG_PRINTLN(" min");
+  delay(1000);
+  DEBUG_PRINTER.flush();
   ESP.deepSleep(DEEP_SLEEP_TIME * 60 * 1000000);
   delay(100);
 #endif

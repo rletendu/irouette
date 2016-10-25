@@ -6,10 +6,10 @@
 #define DHTTYPE       DHT22
 // #define DHT_PIN       D4 // Pin where DHT sensor is connected
 
-#define DS18B20_PIN   D1  // Pin where DS18B20 is connected
+//#define DS18B20_PIN   D1  // Pin where DS18B20 is connected
 
-#define DEEP_SLEEP_TIME   0  // Time in minutes where ESP8266 will sleep before restarting, if 0 : no Sleep
-#define SERVER_PORT      80  // Server listern port, if 0 no server enable on the node
+#define DEEP_SLEEP_TIME   1  // Time in minutes where ESP8266 will sleep before restarting, if 0 : no Sleep
+#define SERVER_PORT      0  // Server listern port, if 0 no server enable on the node
 
 // Domoticz Server IDx configuration
 #define IDX_EDF           1
