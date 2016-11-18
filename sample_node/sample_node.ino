@@ -241,14 +241,6 @@ void handleNotFound() {
 void handlessid() {
   DEBUG_PRINTLN(webserver.uri());
   String message = "SSID updated ! \n\n";
-  message += "URI: ";
-  message += webserver.uri();
-  message += "\nMethod: ";
-  message += ( webserver.method() == HTTP_GET ) ? "GET" : "POST";
-  message += "\nArguments: ";
-  message += webserver.args();
-  message += "\n";
-
   for ( uint8_t i = 0; i < webserver.args(); i++ ) {
     message += " " + webserver.argName ( i ) + ": " + webserver.arg ( i ) + "\n";
     if (webserver.argName (i) == String("ssid")) {
@@ -256,7 +248,6 @@ void handlessid() {
     } else if (webserver.argName (i) == String("pass")) {
       DEBUG_PRINT("PASS : "); DEBUG_PRINTLN(webserver.arg ( i ));
     }
-
   }
   webserver.send ( 200, "text/plain", message );
 }
@@ -273,6 +264,11 @@ void start_setup()
   webserver.on ( "/", handleRoot );
   webserver.on ( "/ssid", handlessid );
   webserver.onNotFound ( handleNotFound );
+  webserver.on ( "/reboot", []() {
+    webserver.send ( 200, "text/plain", "Rebooting !" );
+    ESP.restart();
+    
+  } );
   webserver.begin();
   while (1) {
     webserver.handleClient();
