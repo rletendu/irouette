@@ -42,6 +42,7 @@
 #define DEBUG_PRINTLN(...) {}
 #endif
 
+#define SETUP_SSID        "SETUP"
 
 #endif
 

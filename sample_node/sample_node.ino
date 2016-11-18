@@ -1,6 +1,8 @@
 #include <ESP8266WiFi.h>
 #include "config.h"
 #include "domoticz/domoticz.h"
+#include <ESP8266WebServer.h>
+#include <ESP8266mDNS.h>
 
 #ifdef ESP8266
 extern "C" {
@@ -23,8 +25,11 @@ DHT dht(DHT_PIN, DHTTYPE);
 
 Domoticz domo = Domoticz();
 
-#if ( SERVER_PORT > 0)
+ESP8266WebServer webserver ( 80 );
 WiFiServer server(80);
+
+#if ( SERVER_PORT > 0)
+
 void server_task(void);
 #endif
 
@@ -100,6 +105,7 @@ void setup()
     }
   }
 #endif
+  start_setup();
 
   if (domo.begin()) {
     DEBUG_PRINTLN("Connect OK");
@@ -204,3 +210,73 @@ void server_task(void)
   DEBUG_PRINTLN("Client disconnected");
 }
 #endif
+
+void handleRoot() {
+  String temp;
+  temp = "<html>Hello from ESP8266";
+  temp += "<p>";
+  temp += "<form method='get' action='ssid'><label>SSID: </label><input name='ssid' length=32><label>PASSWD: </label><input name='pass' length=64><input type='submit'></form>";
+  temp += "<form method='get' action='b'><label>SERVER: </label><input name='server' length=32><input name='port' length=64><input type='submit'></form>";
+  temp += "</html>\r\n\r\n";
+  webserver.send ( 200, "text/html", temp );
+}
+void handleNotFound() {
+  DEBUG_PRINTLN(webserver.uri());
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += webserver.uri();
+  message += "\nMethod: ";
+  message += ( webserver.method() == HTTP_GET ) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += webserver.args();
+  message += "\n";
+
+  for ( uint8_t i = 0; i < webserver.args(); i++ ) {
+    message += " " + webserver.argName ( i ) + ": " + webserver.arg ( i ) + "\n";
+  }
+
+  webserver.send ( 404, "text/plain", message );
+}
+
+void handlessid() {
+  DEBUG_PRINTLN(webserver.uri());
+  String message = "SSID updated ! \n\n";
+  message += "URI: ";
+  message += webserver.uri();
+  message += "\nMethod: ";
+  message += ( webserver.method() == HTTP_GET ) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += webserver.args();
+  message += "\n";
+
+  for ( uint8_t i = 0; i < webserver.args(); i++ ) {
+    message += " " + webserver.argName ( i ) + ": " + webserver.arg ( i ) + "\n";
+    if (webserver.argName (i) == String("ssid")) {
+      DEBUG_PRINT("SSID : "); DEBUG_PRINTLN(webserver.arg ( i ));
+    } else if (webserver.argName (i) == String("pass")) {
+      DEBUG_PRINT("PASS : "); DEBUG_PRINTLN(webserver.arg ( i ));
+    }
+
+  }
+  webserver.send ( 200, "text/plain", message );
+}
+
+void start_setup()
+{
+  DEBUG_PRINT("Starting Setup Server on ")DEBUG_PRINTLN("SETUP_SS");
+  WiFi.mode(WIFI_AP); // Update from original
+  WiFi.softAP(SETUP_SSID);
+  DEBUG_PRINTLN(WiFi.localIP());
+  DEBUG_PRINTLN(WiFi.softAPIP());
+  DEBUG_PRINTLN("TCP server started");
+  // MDNS.addService("http", "tcp", 80);
+  webserver.on ( "/", handleRoot );
+  webserver.on ( "/ssid", handlessid );
+  webserver.onNotFound ( handleNotFound );
+  webserver.begin();
+  while (1) {
+    webserver.handleClient();
+  }
+
+}
+
