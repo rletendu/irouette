@@ -3,6 +3,7 @@
 #include "domoticz/domoticz.h"
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
+#include <EEPROM.h>
 
 #ifdef ESP8266
 extern "C" {
@@ -38,6 +39,11 @@ void server_task(void);
 char buff[100];
 char name_buff[20];
 char sw_status[20];
+char ssid[EEPROM_STR_SIZE];
+char passwd[EEPROM_STR_SIZE];
+char domo_server[EEPROM_STR_SIZE];
+char domo_port[EEPROM_STR_SIZE];
+
 
 #ifdef DHT_PIN
 bool update_dht_temperature(float *temp, float *hum)
@@ -83,6 +89,59 @@ bool update_ds18b20_temperature(float *temp)
 }
 #endif
 
+void read_eeprom_string(char *str, uint16_t offset)
+{
+  uint8_t i;
+  for (i = 0; i < EEPROM_STR_SIZE; i++) {
+    str[i] =  char(EEPROM.read(i + offset));
+  }
+}
+
+void write_eeprom_string(char *str, uint16_t offset)
+{
+  uint8_t i;
+  for (i = 0; i < EEPROM_STR_SIZE; i++) {
+    EEPROM.write(i + offset, str[i]);
+  }
+  EEPROM.commit();
+}
+
+int read_eeprom_int( uint16_t offset)
+{
+  char tmp[EEPROM_STR_SIZE];
+  read_eeprom_string(tmp, offset);
+  if (strlen(tmp)) {
+    return atoi(tmp);
+  } else {
+    return 0;
+  }
+}
+
+void write_eeprom_int( uint16_t offset, int value)
+{
+  char tmp[EEPROM_STR_SIZE];
+  snprintf(tmp, EEPROM_STR_SIZE, "%d", value);
+  write_eeprom_string(tmp, offset);
+}
+
+float read_eeprom_float( uint16_t offset)
+{
+  char tmp[EEPROM_STR_SIZE];
+  read_eeprom_string(tmp, offset);
+  if (strlen(tmp)) {
+    return atof(tmp);
+  } else {
+    return 0;
+  }
+}
+
+void write_eeprom_float( uint16_t offset, float value)
+{
+  char tmp[EEPROM_STR_SIZE];
+  dtostrf(value, 3, 1, tmp);
+  write_eeprom_string(tmp, offset);
+}
+
 
 
 void setup()
@@ -91,12 +150,39 @@ void setup()
   uint8_t h;
   uint16_t p;
   uint8_t i;
+  int port;
+  float vbat_min;
 
   Serial.begin(115200);
+  EEPROM.begin(EEPROM_SIZE);
   DEBUG_PRINTLN("\nStarting");
   DEBUG_PRINT("Rcause : "); DEBUG_PRINTLN(ESP.getResetReason());
   const rst_info * resetInfo = system_get_rst_info();
   DEBUG_PRINT("Rcause : "); DEBUG_PRINTLN(resetInfo->reason);
+
+  DEBUG_PRINTLN("Reading EEprom Parameters");
+  read_eeprom_string(ssid, EEPROM_SSID_OFFSET);
+  DEBUG_PRINT("EEPROM_SSID: "); DEBUG_PRINTLN(ssid);
+  read_eeprom_string(passwd, EEPROM_PASSWD_OFFSET);
+  DEBUG_PRINT("EEPROM_PASSWD: "); DEBUG_PRINTLN(passwd);
+  read_eeprom_string(domo_server, EEPROM_SERVER_OFFSET);
+  DEBUG_PRINT("EEPROM_SERVER: "); DEBUG_PRINTLN(domo_server);
+  read_eeprom_string(domo_port, EEPROM_PORT_OFFSET);
+  DEBUG_PRINT("EEPROM_PORT: "); DEBUG_PRINTLN(domo_port);
+  port = atoi(domo_port);
+  DEBUG_PRINT("PORT: "); DEBUG_PRINTLN(port);
+  DEBUG_PRINT("PORT directly from EE: "); DEBUG_PRINTLN(read_eeprom_int(EEPROM_PORT_OFFSET));
+  DEBUG_PRINT("Vbat min: "); DEBUG_PRINTLN(read_eeprom_float(EEPROM_VBAT_MIN_OFFSET));
+
+  DEBUG_PRINTLN("Test Writing EEprom Parameters");
+  /*
+    write_eeprom_string("TestSSID", EEPROM_SSID_OFFSET);
+    write_eeprom_string("my_password", EEPROM_PASSWD_OFFSET);
+    write_eeprom_string("192.168.1.200", EEPROM_SERVER_OFFSET);
+    write_eeprom_int(EEPROM_PORT_OFFSET, read_eeprom_int(EEPROM_PORT_OFFSET) + 1);
+  */
+  write_eeprom_float(EEPROM_VBAT_MIN_OFFSET, read_eeprom_float(EEPROM_VBAT_MIN_OFFSET) + 1.1);
+  //write_eeprom_string("8080", EEPROM_PORT_OFFSET);
 
 #ifdef DS18B20_PIN
   for (i = 0; i < 2; i++) {
@@ -212,17 +298,47 @@ void server_task(void)
 #endif
 
 void handleRoot() {
-  String temp;
-  temp = "<html>Hello from ESP8266";
-  temp += "<p>";
-  temp += "<form method='get' action='ssid'><label>SSID: </label><input name='ssid' length=32><label>PASSWD: </label><input name='pass' length=64><input type='submit'></form>";
-  temp += "<form method='get' action='b'><label>SERVER: </label><input name='server' length=32><input name='port' length=64><input type='submit'></form>";
-  temp += "</html>\r\n\r\n";
-  webserver.send ( 200, "text/html", temp );
+  String message;
+  char tmp[EEPROM_STR_SIZE];
+
+  message = "<html>Domoticz Node Configuration";
+  message += "<meta http-equiv='pragma' content='no-cache'/>";
+  message += "<p>";
+  message += String("MAC: ") + String(WiFi.macAddress().c_str());
+  message += "<form method='get' action='/'>";
+  read_eeprom_string(tmp, EEPROM_SSID_OFFSET);
+  message += "<label>SSID: </label><input name='ssid' length=32 value='" + String(tmp) + "'><br>";
+  read_eeprom_string(tmp, EEPROM_PASSWD_OFFSET);
+  message += "<label>PASSWD: </label><input name='pass' length=32 value='" + String(tmp) + "'><br>";
+  read_eeprom_string(tmp, EEPROM_SERVER_OFFSET);
+  message += "<label>SERVER: </label><input name='server' length=32 value='" + String(tmp) + "'><br>";
+  read_eeprom_string(tmp, EEPROM_PORT_OFFSET);
+  message += "<label>PORT: </label> <input name ='port' length=32 value = '" + String(tmp) + "' ><br>";
+  message += "<input type='submit'></form>";
+
+  for ( uint8_t i = 0; i < webserver.args(); i++ ) {
+    webserver.arg ( i ).toCharArray(tmp, EEPROM_STR_SIZE );
+    if (webserver.argName (i) == String("ssid")) {
+      DEBUG_PRINT("SSID : "); DEBUG_PRINTLN(tmp);
+      write_eeprom_string(tmp, EEPROM_SSID_OFFSET);
+    } else if (webserver.argName (i) == String("pass")) {
+      DEBUG_PRINT("PASS : "); DEBUG_PRINTLN(tmp);
+      write_eeprom_string(tmp, EEPROM_PASSWD_OFFSET);
+    } else if (webserver.argName (i) == String("server")) {
+      DEBUG_PRINT("Server : "); DEBUG_PRINTLN(tmp);
+      write_eeprom_string(tmp, EEPROM_SERVER_OFFSET);
+    } else if (webserver.argName (i) == String("port")) {
+      DEBUG_PRINT("Port : "); DEBUG_PRINTLN(tmp);
+      write_eeprom_string(tmp, EEPROM_PORT_OFFSET);
+    }
+  }
+  message += "</html>\r\n\r\n";
+  webserver.send ( 200, "text/html", message );
 }
+
 void handleNotFound() {
   DEBUG_PRINTLN(webserver.uri());
-  String message = "File Not Found\n\n";
+  String message = "Not Found\n\n";
   message += "URI: ";
   message += webserver.uri();
   message += "\nMethod: ";
@@ -230,11 +346,9 @@ void handleNotFound() {
   message += "\nArguments: ";
   message += webserver.args();
   message += "\n";
-
   for ( uint8_t i = 0; i < webserver.args(); i++ ) {
     message += " " + webserver.argName ( i ) + ": " + webserver.arg ( i ) + "\n";
   }
-
   webserver.send ( 404, "text/plain", message );
 }
 
@@ -267,12 +381,10 @@ void start_setup()
   webserver.on ( "/reboot", []() {
     webserver.send ( 200, "text/plain", "Rebooting !" );
     ESP.restart();
-    
   } );
   webserver.begin();
   while (1) {
     webserver.handleClient();
   }
-
 }
 
