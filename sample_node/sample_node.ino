@@ -301,21 +301,6 @@ void handleRoot() {
   String message;
   char tmp[EEPROM_STR_SIZE];
 
-  message = "<html>Domoticz Node Configuration";
-  message += "<meta http-equiv='pragma' content='no-cache'/>";
-  message += "<p>";
-  message += String("MAC: ") + String(WiFi.macAddress().c_str());
-  message += "<form method='get' action='/'>";
-  read_eeprom_string(tmp, EEPROM_SSID_OFFSET);
-  message += "<label>SSID: </label><input name='ssid' length=32 value='" + String(tmp) + "'><br>";
-  read_eeprom_string(tmp, EEPROM_PASSWD_OFFSET);
-  message += "<label>PASSWD: </label><input name='pass' length=32 value='" + String(tmp) + "'><br>";
-  read_eeprom_string(tmp, EEPROM_SERVER_OFFSET);
-  message += "<label>SERVER: </label><input name='server' length=32 value='" + String(tmp) + "'><br>";
-  read_eeprom_string(tmp, EEPROM_PORT_OFFSET);
-  message += "<label>PORT: </label> <input name ='port' length=32 value = '" + String(tmp) + "' ><br>";
-  message += "<input type='submit'></form>";
-
   for ( uint8_t i = 0; i < webserver.args(); i++ ) {
     webserver.arg ( i ).toCharArray(tmp, EEPROM_STR_SIZE );
     if (webserver.argName (i) == String("ssid")) {
@@ -332,7 +317,22 @@ void handleRoot() {
       write_eeprom_string(tmp, EEPROM_PORT_OFFSET);
     }
   }
-  message += "</html>\r\n\r\n";
+  
+  message = "<html><body style='background-color:powderblue;'><h1>Domoticz Node Configurator</h1>";
+  message += "<meta http-equiv='pragma' content='no-cache'/>";
+  message += "<p>";
+  message += String("MAC: ") + String(WiFi.macAddress().c_str());
+  message += "<form method='get' action='/'>";
+  read_eeprom_string(tmp, EEPROM_SSID_OFFSET);
+  message += "<label>SSID: </label><input name='ssid' length=32 value='" + String(tmp) + "'><br>";
+  read_eeprom_string(tmp, EEPROM_PASSWD_OFFSET);
+  message += "<label>PASSWD: </label><input name='pass' length=32 value='" + String(tmp) + "'><br>";
+  read_eeprom_string(tmp, EEPROM_SERVER_OFFSET);
+  message += "<label>SERVER: </label><input name='server' length=32 value='" + String(tmp) + "'><br>";
+  read_eeprom_string(tmp, EEPROM_PORT_OFFSET);
+  message += "<label>PORT: </label> <input name ='port' length=32 value = '" + String(tmp) + "' ><br>";
+  message += "<input type='submit'></form>";
+  message += "</body></html>\r\n\r\n";
   webserver.send ( 200, "text/html", message );
 }
 
