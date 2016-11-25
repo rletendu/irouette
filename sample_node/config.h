@@ -6,7 +6,9 @@
 #define DHTTYPE       DHT22
 // #define DHT_PIN       D4 // Pin where DHT sensor is connected
 
-//#define DS18B20_PIN   D1  // Pin where DS18B20 is connected
+#define DS18B20_PIN   D1  // Pin where DS18B20 is connected
+#define SETUP_PIN     D1
+
 
 #define DEEP_SLEEP_TIME   1  // Time in minutes where ESP8266 will sleep before restarting, if 0 : no Sleep
 #define SERVER_PORT      0  // Server listern port, if 0 no server enable on the node
@@ -54,7 +56,7 @@
 #define EEPROM_IDX1_OFFSET           7*EEPROM_STR_SIZE
 #define EEPROM_IDX2_OFFSET           8*EEPROM_STR_SIZE
 
- 
+
 #define SETUP_SSID        "SETUP"
 
 #endif

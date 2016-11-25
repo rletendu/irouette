@@ -1,9 +1,10 @@
 #include <ESP8266WiFi.h>
 #include "config.h"
 #include "domoticz/domoticz.h"
+#include "eeprom_esp.h"
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
-#include <EEPROM.h>
+
 
 #ifdef ESP8266
 extern "C" {
@@ -30,7 +31,6 @@ ESP8266WebServer webserver ( 80 );
 WiFiServer server(80);
 
 #if ( SERVER_PORT > 0)
-
 void server_task(void);
 #endif
 
@@ -43,6 +43,10 @@ char ssid[EEPROM_STR_SIZE];
 char passwd[EEPROM_STR_SIZE];
 char domo_server[EEPROM_STR_SIZE];
 char domo_port[EEPROM_STR_SIZE];
+int  sleep_time;
+int  idx;
+
+Eeprom_esp eep(EEPROM_SIZE, EEPROM_STR_SIZE);
 
 
 #ifdef DHT_PIN
@@ -89,59 +93,6 @@ bool update_ds18b20_temperature(float *temp)
 }
 #endif
 
-void read_eeprom_string(char *str, uint16_t offset)
-{
-  uint8_t i;
-  for (i = 0; i < EEPROM_STR_SIZE; i++) {
-    str[i] =  char(EEPROM.read(i + offset));
-  }
-}
-
-void write_eeprom_string(char *str, uint16_t offset)
-{
-  uint8_t i;
-  for (i = 0; i < EEPROM_STR_SIZE; i++) {
-    EEPROM.write(i + offset, str[i]);
-  }
-  EEPROM.commit();
-}
-
-int read_eeprom_int( uint16_t offset)
-{
-  char tmp[EEPROM_STR_SIZE];
-  read_eeprom_string(tmp, offset);
-  if (strlen(tmp)) {
-    return atoi(tmp);
-  } else {
-    return 0;
-  }
-}
-
-void write_eeprom_int( uint16_t offset, int value)
-{
-  char tmp[EEPROM_STR_SIZE];
-  snprintf(tmp, EEPROM_STR_SIZE, "%d", value);
-  write_eeprom_string(tmp, offset);
-}
-
-float read_eeprom_float( uint16_t offset)
-{
-  char tmp[EEPROM_STR_SIZE];
-  read_eeprom_string(tmp, offset);
-  if (strlen(tmp)) {
-    return atof(tmp);
-  } else {
-    return 0;
-  }
-}
-
-void write_eeprom_float( uint16_t offset, float value)
-{
-  char tmp[EEPROM_STR_SIZE];
-  dtostrf(value, 3, 1, tmp);
-  write_eeprom_string(tmp, offset);
-}
-
 
 
 void setup()
@@ -154,35 +105,37 @@ void setup()
   float vbat_min;
 
   Serial.begin(115200);
-  EEPROM.begin(EEPROM_SIZE);
   DEBUG_PRINTLN("\nStarting");
   DEBUG_PRINT("Rcause : "); DEBUG_PRINTLN(ESP.getResetReason());
   const rst_info * resetInfo = system_get_rst_info();
   DEBUG_PRINT("Rcause : "); DEBUG_PRINTLN(resetInfo->reason);
 
   DEBUG_PRINTLN("Reading EEprom Parameters");
-  read_eeprom_string(ssid, EEPROM_SSID_OFFSET);
+  eep.read_string(EEPROM_SSID_OFFSET, ssid);
   DEBUG_PRINT("EEPROM_SSID: "); DEBUG_PRINTLN(ssid);
-  read_eeprom_string(passwd, EEPROM_PASSWD_OFFSET);
+  eep.read_string(EEPROM_PASSWD_OFFSET, passwd);
   DEBUG_PRINT("EEPROM_PASSWD: "); DEBUG_PRINTLN(passwd);
-  read_eeprom_string(domo_server, EEPROM_SERVER_OFFSET);
+  eep.read_string(EEPROM_SERVER_OFFSET, domo_server);
   DEBUG_PRINT("EEPROM_SERVER: "); DEBUG_PRINTLN(domo_server);
-  read_eeprom_string(domo_port, EEPROM_PORT_OFFSET);
+  eep.read_string(EEPROM_PORT_OFFSET, domo_port);
   DEBUG_PRINT("EEPROM_PORT: "); DEBUG_PRINTLN(domo_port);
   port = atoi(domo_port);
   DEBUG_PRINT("PORT: "); DEBUG_PRINTLN(port);
-  DEBUG_PRINT("PORT directly from EE: "); DEBUG_PRINTLN(read_eeprom_int(EEPROM_PORT_OFFSET));
-  DEBUG_PRINT("Vbat min: "); DEBUG_PRINTLN(read_eeprom_float(EEPROM_VBAT_MIN_OFFSET));
+  eep.read_int(EEPROM_PORT_OFFSET, &port);
+  DEBUG_PRINT("PORT directly from EE: "); DEBUG_PRINTLN(port);
+  eep.read_int(EEPROM_IDX1_OFFSET, &idx);
+  DEBUG_PRINT("IDx: "); DEBUG_PRINTLN(idx);
+  eep.read_int(EEPROM_PORT_OFFSET, &sleep_time);
+  DEBUG_PRINT("Sleep Time "); DEBUG_PRINTLN(sleep_time);
 
-  DEBUG_PRINTLN("Test Writing EEprom Parameters");
-  /*
-    write_eeprom_string("TestSSID", EEPROM_SSID_OFFSET);
-    write_eeprom_string("my_password", EEPROM_PASSWD_OFFSET);
-    write_eeprom_string("192.168.1.200", EEPROM_SERVER_OFFSET);
-    write_eeprom_int(EEPROM_PORT_OFFSET, read_eeprom_int(EEPROM_PORT_OFFSET) + 1);
-  */
-  write_eeprom_float(EEPROM_VBAT_MIN_OFFSET, read_eeprom_float(EEPROM_VBAT_MIN_OFFSET) + 1.1);
-  //write_eeprom_string("8080", EEPROM_PORT_OFFSET);
+
+  pinMode(SETUP_PIN, INPUT_PULLUP);
+  if (digitalRead(SETUP_PIN) == 0) {
+    DEBUG_PRINTLN("Starting in Setup Mode");
+    start_setup_server();
+  } else  {
+    DEBUG_PRINTLN("Starting in Normal Mode");
+  }
 
 #ifdef DS18B20_PIN
   for (i = 0; i < 2; i++) {
@@ -191,9 +144,7 @@ void setup()
     }
   }
 #endif
-  start_setup();
-
-  if (domo.begin()) {
+  if (domo.begin(ssid, passwd, domo_server, domo_port, "", "")) {
     DEBUG_PRINTLN("Connect OK");
   } else {
     DEBUG_PRINTLN("Connect Fail");
@@ -247,7 +198,7 @@ void loop() {
   DEBUG_PRINT("Sleeping for "); DEBUG_PRINT(DEEP_SLEEP_TIME); DEBUG_PRINTLN(" min");
   delay(1000);
   DEBUG_PRINTER.flush();
-  ESP.deepSleep(DEEP_SLEEP_TIME * 60 * 1000000);
+  ESP.deepSleep(sleep_time * 60 * 1000000);
   delay(100);
 #endif
 
@@ -305,35 +256,52 @@ void handleRoot() {
     webserver.arg ( i ).toCharArray(tmp, EEPROM_STR_SIZE );
     if (webserver.argName (i) == String("ssid")) {
       DEBUG_PRINT("SSID : "); DEBUG_PRINTLN(tmp);
-      write_eeprom_string(tmp, EEPROM_SSID_OFFSET);
-    } else if (webserver.argName (i) == String("pass")) {
+      eep.write_string(EEPROM_SSID_OFFSET, tmp);
+    }
+    if (webserver.argName (i) == String("pass")) {
       DEBUG_PRINT("PASS : "); DEBUG_PRINTLN(tmp);
-      write_eeprom_string(tmp, EEPROM_PASSWD_OFFSET);
-    } else if (webserver.argName (i) == String("server")) {
+      eep.write_string(EEPROM_PASSWD_OFFSET, tmp);
+    }
+    if (webserver.argName (i) == String("server")) {
       DEBUG_PRINT("Server : "); DEBUG_PRINTLN(tmp);
-      write_eeprom_string(tmp, EEPROM_SERVER_OFFSET);
-    } else if (webserver.argName (i) == String("port")) {
+      eep.write_string(EEPROM_SERVER_OFFSET, tmp);
+    }
+    if (webserver.argName (i) == String("port")) {
       DEBUG_PRINT("Port : "); DEBUG_PRINTLN(tmp);
-      write_eeprom_string(tmp, EEPROM_PORT_OFFSET);
+      eep.write_string(EEPROM_PORT_OFFSET, tmp);
+    }
+    if (webserver.argName (i) == String("idx1")) {
+      DEBUG_PRINT("Idx1 : "); DEBUG_PRINTLN(tmp);
+      eep.write_string(EEPROM_IDX1_OFFSET, tmp);
+    }
+    if (webserver.argName (i) == String("sleep_time")) {
+      DEBUG_PRINT("Sleep : "); DEBUG_PRINTLN(tmp);
+      eep.write_string(EEPROM_SLEEP_TIME_OFFSET, tmp);
     }
   }
-  
-  message = "<html><body style='background-color:powderblue;'><h1>Domoticz Node Configurator</h1>";
-  message += "<meta http-equiv='pragma' content='no-cache'/>";
+
+  message = "<html><body>";
+  message += "<style>label{display:inline-block;width:150px;}body{background-color: Thistle;}</style>";
+  message += "<h1>Domoticz Node Configurator</h1>";
+  //message += "<meta http-equiv='pragma' content='no-cache'/>";
   message += "<p>";
   message += String("MAC: ") + String(WiFi.macAddress().c_str());
   message += "<form method='get' action='/'>";
-  read_eeprom_string(tmp, EEPROM_SSID_OFFSET);
-  message += "<label>SSID: </label><input name='ssid' length=32 value='" + String(tmp) + "'><br>";
-  read_eeprom_string(tmp, EEPROM_PASSWD_OFFSET);
-  message += "<label>PASSWD: </label><input name='pass' length=32 value='" + String(tmp) + "'><br>";
-  read_eeprom_string(tmp, EEPROM_SERVER_OFFSET);
-  message += "<label>SERVER: </label><input name='server' length=32 value='" + String(tmp) + "'><br>";
-  read_eeprom_string(tmp, EEPROM_PORT_OFFSET);
-  message += "<label>PORT: </label> <input name ='port' length=32 value = '" + String(tmp) + "' ><br>";
-  message += "<input type='submit'></form>";
-  message += "</body></html>\r\n\r\n";
-  webserver.send ( 200, "text/html", message );
+  eep.read_string(EEPROM_SSID_OFFSET, tmp);
+  message += "<label>SSID:</label><input name='ssid' maxlength='32' value='" + String(tmp) + "'><br>";
+  eep.read_string( EEPROM_PASSWD_OFFSET, tmp);
+  message += "<label>PASSWD:</label><input name='pass' maxlength='32' value='" + String(tmp) + "'><br>";
+  eep.read_string( EEPROM_SERVER_OFFSET, tmp);
+  message += "<label>SERVER:</label><input name='server' maxlength='32' value='" + String(tmp) + "'><br>";
+  eep.read_string( EEPROM_PORT_OFFSET, tmp);
+  message += "<label>PORT:</label> <input name ='port' maxlength='4' value = '" + String(tmp) + "' ><br>";
+  eep.read_string( EEPROM_IDX1_OFFSET, tmp);
+  message += "<label>IDX1:</label> <input name ='idx1' maxlength='2' value = '" + String(tmp) + "' ><br>";
+  eep.read_string( EEPROM_SLEEP_TIME_OFFSET, tmp);
+  message += "<label>SLEEP:</label> <input name ='sleep_time' maxlength='2' value = '" + String(tmp) + "' ><br>";
+  message += "<input type='submit' value='Update'></form>";
+  message += "</body></html>";
+  webserver.send (200, "text/html", message );
 }
 
 void handleNotFound() {
@@ -352,37 +320,29 @@ void handleNotFound() {
   webserver.send ( 404, "text/plain", message );
 }
 
-void handlessid() {
-  DEBUG_PRINTLN(webserver.uri());
-  String message = "SSID updated ! \n\n";
-  for ( uint8_t i = 0; i < webserver.args(); i++ ) {
-    message += " " + webserver.argName ( i ) + ": " + webserver.arg ( i ) + "\n";
-    if (webserver.argName (i) == String("ssid")) {
-      DEBUG_PRINT("SSID : "); DEBUG_PRINTLN(webserver.arg ( i ));
-    } else if (webserver.argName (i) == String("pass")) {
-      DEBUG_PRINT("PASS : "); DEBUG_PRINTLN(webserver.arg ( i ));
-    }
-  }
-  webserver.send ( 200, "text/plain", message );
-}
-
-void start_setup()
+void start_setup_server()
 {
-  DEBUG_PRINT("Starting Setup Server on ")DEBUG_PRINTLN("SETUP_SS");
-  WiFi.mode(WIFI_AP); // Update from original
+  DEBUG_PRINT("Starting Setup Server on ");DEBUG_PRINTLN(SETUP_SSID);
+  WiFi.mode(WIFI_AP);
   WiFi.softAP(SETUP_SSID);
   DEBUG_PRINTLN(WiFi.localIP());
   DEBUG_PRINTLN(WiFi.softAPIP());
-  DEBUG_PRINTLN("TCP server started");
-  // MDNS.addService("http", "tcp", 80);
+
+  if (!MDNS.begin("esp8266")) {
+    DEBUG_PRINTLN("Error MDNS responder!");
+    while (1) {
+      delay(1000);
+    }
+  }
   webserver.on ( "/", handleRoot );
-  webserver.on ( "/ssid", handlessid );
   webserver.onNotFound ( handleNotFound );
   webserver.on ( "/reboot", []() {
-    webserver.send ( 200, "text/plain", "Rebooting !" );
+    webserver.send ( 200, "text/plain", "<html><body><meta http-equiv='refresh' content='5;url=/' />Rebooting in 5 seconds</body></html>" );
     ESP.restart();
   } );
   webserver.begin();
+  DEBUG_PRINTLN("TCP server started");
+  MDNS.addService("http", "tcp", 80);
   while (1) {
     webserver.handleClient();
   }
