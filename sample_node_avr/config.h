@@ -6,7 +6,7 @@
 #define DHTTYPE       DHT22
 // #define DHT_PIN       D4 // Pin where DHT sensor is connected
 
-#define DS18B20_PIN   D1  // Pin where DS18B20 is connected
+//#define DS18B20_PIN   D1  // Pin where DS18B20 is connected
 #define SETUP_PIN     D1
 
 
@@ -44,20 +44,6 @@
 #define DEBUG_PRINTLN(...) {}
 #endif
 
-#define EEPROM_SIZE                  512
-#define EEPROM_STR_SIZE              32
-#define EEPROM_SSID_OFFSET           0*EEPROM_STR_SIZE
-#define EEPROM_PASSWD_OFFSET         1*EEPROM_STR_SIZE
-#define EEPROM_SERVER_OFFSET         2*EEPROM_STR_SIZE
-#define EEPROM_PORT_OFFSET           3*EEPROM_STR_SIZE
-#define EEPROM_SLEEP_TIME_OFFSET     4*EEPROM_STR_SIZE
-#define EEPROM_VBAT_MIN_OFFSET       5*EEPROM_STR_SIZE
-#define EEPROM_VBAT_MAX_OFFSET       6*EEPROM_STR_SIZE
-#define EEPROM_IDX1_OFFSET           7*EEPROM_STR_SIZE
-#define EEPROM_IDX2_OFFSET           8*EEPROM_STR_SIZE
-
-
-#define SETUP_SSID        "SETUP"
 
 #endif
 
