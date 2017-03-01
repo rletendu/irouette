@@ -1,0 +1,35 @@
+<HTML>
+<style>
+label{
+ display:inline-block;
+ width:100px;
+}
+body {
+ background-color: Thistle;
+}
+</style>
+<body>
+<h1>Domoticz Node Configurator</h1>
+<p><h2>Wifi</h2>
+<form method='get' action='update_wifi'>
+<label>SSID    : </label><input name='ssid' maxlength=32 value='default_ssid'><br>
+<label>PASSWD: </label><input name='pass' maxlength=32 type='password' value='welcome2'><br>
+<input type='submit' value='Apply'>
+</form>
+<hr>
+<p><h2>Domoticz Server</h2>
+<form method='get' action='update_domo'>
+<label>Domoticz Server: </label><input name='server' value='192.168.2.200'><br>
+<label>Domoticz Port: </label><input name='port' value='8080'><br>
+<input type='submit' value='Apply'>
+</form>
+<form method='get' action='relay_on'>
+<input type='submit' value='relay'>
+<p><h2>Sensor</h2>
+<form method='get' action='update_node'>
+<label>IDX: </label><input name='idx' maxlength=2 value='11'><br>
+<input type='submit' value='Apply'>
+</form>
+</body>
+</form>
+</HTML>
