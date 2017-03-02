@@ -1,6 +1,10 @@
 #ifndef __CONFIG_DOMOTICZ_H__
 #define __CONFIG_DOMOTICZ_H__
 
+
+//#define DOMOTICZ_INTERFACE  DOMOTICZ_WIFI
+#define DOMOTICZ_INTERFACE  DOMOTICZ_ETHERNET
+
 #define DOMOTICZ_DEBUG
 
 //#define DOMOTICZ_SEND_VBAT
@@ -27,8 +31,3 @@
 
 
 #endif //
-
-
-
-
-
