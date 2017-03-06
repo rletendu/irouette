@@ -18,7 +18,7 @@
 #define DOMOTICZ_PORT     "8080"
 #else
 #define DOMOTICZ_SERVER   "10.171.140.103"
-#define DOMOTICZ_PORT     8081
+#define DOMOTICZ_PORT     "8081"
 #endif
 
 // #define DOMOTICZ_USER     "domoticz_username"
