@@ -101,7 +101,7 @@ void setup()
   if (domo.update_temperature(7, 13.5)) {
     DEBUG_PRINTLN(F("Temp Sensor Updated"));
   }
-
+  domo.send_log_message("Done from AVR ethernet Node!");
   float t = 10.0;
   while(1);
   {
