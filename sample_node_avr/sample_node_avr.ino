@@ -102,7 +102,15 @@ void setup()
     DEBUG_PRINTLN(F("Temp Sensor Updated"));
   }
 
+  float t = 10.0;
   while(1);
+  {
+      delay(5000);
+      t+= 0.3;
+    if (domo.update_temperature(7,t)) {
+    DEBUG_PRINTLN(F("Temp Sensor Updated"));
+  }
+  }
 
 /*
   

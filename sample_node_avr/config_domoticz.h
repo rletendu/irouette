@@ -5,7 +5,7 @@
 //#define DOMOTICZ_INTERFACE  DOMOTICZ_WIFI
 #define DOMOTICZ_INTERFACE  DOMOTICZ_ETHERNET
 
-#define DOMOTICZ_DEBUG
+// #define DOMOTICZ_DEBUG
 
 //#define DOMOTICZ_SEND_VBAT
 #define DOMOTICZ_VBAT_MIN 2000
@@ -21,8 +21,8 @@
 #define DOMOTICZ_PORT     "8081"
 #endif
 
-// #define DOMOTICZ_USER     "domoticz_username"
-// #define DOMOTICZ_PASSWD   "domoticz_password"
+#define DOMOTICZ_USER     "domoticz_username"
+#define DOMOTICZ_PASSWD   "domoticz_password"
 
 #define MYSSID "domo"
 #define PASSWD "pulsar est content"
