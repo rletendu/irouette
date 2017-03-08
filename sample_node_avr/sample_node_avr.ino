@@ -1,6 +1,7 @@
 
 #include "config.h"
 #include "domoticz/domoticz.h"
+#include <avr/wdt.h>
 
 
 #ifdef ESP8266
@@ -23,6 +24,7 @@ DHT dht(DHT_PIN, DHTTYPE);
 
 
 Domoticz domo = Domoticz();
+EthernetServer server = EthernetServer(80);
 
 char buff[20];
 char name_buff[20];
@@ -31,7 +33,15 @@ char sw_status[20];
 int  sleep_time;
 int  idx;
 
+void software_Reboot()
+{
+  wdt_enable(WDTO_15MS);
 
+  while(1)
+  {
+
+  }
+}
 
 
 void setup()
@@ -87,13 +97,13 @@ void setup()
     DEBUG_PRINTLN(F("Connect OK"));
   } else {
     DEBUG_PRINTLN(F("Connect Fail"));
-    
+
   }
   delay(100);
   if (domo.get_servertime(buff)) {
     DEBUG_PRINT(F("Server Time:")); DEBUG_PRINTLN(buff);
   }
-  delay(100);  
+  delay(100);
   if (domo.update_temperature(7, 23.5)) {
     DEBUG_PRINTLN(F("Temp Sensor Updated"));
   }
@@ -103,17 +113,11 @@ void setup()
   }
   domo.send_log_message("Done from AVR ethernet Node!");
   float t = 10.0;
-  while(1);
-  {
-      delay(5000);
-      t+= 0.3;
-    if (domo.update_temperature(7,t)) {
-    DEBUG_PRINTLN(F("Temp Sensor Updated"));
-  }
-  }
+
+
 
 /*
-  
+
   if (domo.get_servertime(buff)) {
     DEBUG_PRINT("Server Time:"); DEBUG_PRINTLN(buff);
   }
@@ -144,7 +148,7 @@ void setup()
 */
 #if ( SERVER_PORT > 0)
   server.begin();
-  DEBUG_PRINTLN("Server started");
+  DEBUG_PRINTLN(F("Server started"));
 #endif
 }
 
@@ -163,13 +167,13 @@ void loop() {
 #if ( SERVER_PORT > 0)
 void server_task(void)
 {
-  WiFiClient client = server.available();
+  EthernetClient client = server.available();
   if (!client) {
     return;
   }
 
   // Wait until the client sends some data
-  DEBUG_PRINTLN("new client");
+  DEBUG_PRINTLN(F("new client"));
   while (!client.available()) {
     delay(1);
   }
@@ -180,25 +184,26 @@ void server_task(void)
   client.flush();
 
   // Match the request
-  if (req.indexOf(" / relay") != -1) {
-    DEBUG_PRINTLN("Relay Request");
+  if (req.indexOf(F("/relay")) != -1) {
+    DEBUG_PRINTLN(F("Relay Request"));
   }
-  else if (req.indexOf(" / reset") != -1) {
-    DEBUG_PRINTLN("Reset Request");
-    ESP.restart();
+  else if (req.indexOf(F("/reset")) != -1) {
+    DEBUG_PRINTLN(F("Reset Request"));
+    software_Reboot();
+    //ESP.restart();
   }
   else {
-    DEBUG_PRINTLN("invalid request");
+    DEBUG_PRINTLN(F("invalid request"));
     client.stop();
     return;
   }
   client.flush();
-  String s = "HTTP / 1.1 200 OK\r\nContent - Type: text / html\r\n\r\n < !DOCTYPE HTML > \r\n<html>\r\nDoor Garage Activation OK ";
-  s += " < / html > \n";
+  //String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n <!DOCTYPE HTML> \r\n<html>\r\nDoor Garage Activation OK</html>\n";
+
   // Send the response to the client
-  client.print(s);
+  client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n <!DOCTYPE HTML> \r\n<html>\r\nDoor Garage Activation OK</html>\n"));
   delay(1);
-  DEBUG_PRINTLN("Client disconnected");
+  DEBUG_PRINTLN(F("Client disconnected"));
 }
 #endif
 
