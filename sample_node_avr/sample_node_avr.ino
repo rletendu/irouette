@@ -24,12 +24,15 @@ DHT dht(DHT_PIN, DHTTYPE);
 
 
 Domoticz domo = Domoticz();
+#if SERVER_PORT !=0
 EthernetServer server = EthernetServer(80);
+#endif
 
 char buff[20];
+/*
 char name_buff[20];
 char sw_status[20];
-
+*/
 int  sleep_time;
 int  idx;
 
