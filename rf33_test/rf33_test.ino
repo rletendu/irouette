@@ -1,22 +1,44 @@
 #include "oregon.hpp"
+#include <x10rf.h>
 
+#define BP_PIN 2
 
-#define TX_PIN 1
+#define TX_PIN 10
 Oregon rf_sender = Oregon();
+x10rf myx10 = x10rf(TX_PIN,0,1);
+byte old=HIGH;
 
 void setup()
 {
+  pinMode(BP_PIN,INPUT_PULLUP);
   Serial.begin(9600);
   rf_sender.begin(TX_PIN);
+  myx10.begin();
+  Serial.println("Tx Temperature");
+  rf_sender.send_temperature(0x20, 0xCB, 11.2, 1);
 
 }
 
 void loop()
 {
-  rf_sender.send_temperature(0x20, 0xCB, 11.2, 1);
-  delay(3000);
+  byte state;
+  delay(100);
+  state = digitalRead(BP_PIN);
+  if (state != old) {
+    Serial.print("Tx BP:");Serial.println(state);
+    if (state == HIGH) {
+     myx10.x10Switch('B',4, 1); 
+    } else {
+      myx10.x10Switch('B',4, 0); 
+    }
+  }
+  old = state;
+
+ 
+  /*
   rf_sender.send_temperature_hum(0x20, 0xCB, 11.2, 52,1);
   delay(3000);
+  */
 }
 
 
