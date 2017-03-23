@@ -3,6 +3,8 @@
 #include "domoticz/domoticz.h"
 #include <avr/wdt.h>
 
+#define SD_PIN 4
+
 
 #ifdef ESP8266
 extern "C" {
@@ -39,7 +41,6 @@ int  idx;
 void software_Reboot()
 {
   wdt_enable(WDTO_15MS);
-
   while(1)
   {
 
@@ -55,6 +56,10 @@ void setup()
   uint8_t i;
   int port;
   float vbat_min;
+
+  pinMode(SD_PIN, OUTPUT);
+  digitalWrite(SD_PIN, 1);
+  
 
   Serial.begin(115200);
   DEBUG_PRINTLN(F("\nStarting"));
