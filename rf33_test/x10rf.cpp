@@ -36,14 +36,32 @@ x10rf::x10rf(uint8_t tx_pin, uint8_t led_pin, uint8_t rf_repeats)
 }
 void x10rf::send_temperature(uint8_t rfxm_address, float temperature)
 {
-  uint8_t t = temperature;
-  uint8_t td = 10 * (temperature - t);
-  DEBUG_X10RF_PRINT(t); DEBUG_X10RF_PRINT(" "); DEBUG_X10RF_PRINTLN(td);
+  uint8_t ti = temperature;
+  uint8_t td = 10 * (temperature - ti);
   if (td >= 5) {
-    RFXsensor(rfxm_address, 't', 'T', t);
+    RFXsensor(rfxm_address, 't', 'T', ti);
   } else {
-    RFXsensor(rfxm_address, 't', 't', t);
+    RFXsensor(rfxm_address, 't', 't', ti);
   }
+}
+
+void x10rf::send_meter(uint8_t rfxm_address, long value)
+{
+  RFXmeter(rfxm_address, 0, value);
+}
+
+void x10rf::send_switch(char house_code, uint8_t unit_code, enum x10_switch_cmd command)
+{
+  x10Switch( house_code,  unit_code, command);
+}
+
+void x10rf::x10Security(uint8_t address, uint8_t command) {
+  uint8_t x10buff[4]; // Set message buffer 4 bytes
+  x10buff[0] = address;
+  x10buff[1] = (~x10buff[0] & 0xF) + (x10buff[0] & 0xF0); // Calculate byte1 (byte 1 complement
+  x10buff[2] = command;
+  x10buff[3] = ~x10buff[2];
+  SendCommand(x10buff, sizeof(x10buff));
 }
 
 void x10rf::RFXmeter(uint8_t rfxm_address, uint8_t rfxm_packet_type, long rfxm_value) {
@@ -201,21 +219,9 @@ void x10rf::x10Switch(char house_code, uint8_t unit_code, enum x10_switch_cmd co
   SendCommand(x10buff, sizeof(x10buff));
 }
 
-void x10rf::x10Security(uint8_t address, uint8_t command) {
-  uint8_t x10buff[4]; // Set message buffer 4 bytes
-  x10buff[0] = address;
-  x10buff[1] = (~x10buff[0] & 0xF) + (x10buff[0] & 0xF0); // Calculate byte1 (byte 1 complement
-  x10buff[2] = command;
-  x10buff[3] = ~x10buff[2];
-  // x10buff[4] = code; // Couldn't get 48 bit security working.
-  // if((x10buff[4] % 2) == 0) { x10buff[5] = 0;} //Calc even parity
-  // else { x10buff[5] = 0x80;}
-  SendCommand(x10buff, sizeof(x10buff));
-
-}
 
 void x10rf::SendCommand(uint8_t *data, uint8_t size) {
-  DEBUG_X10RF_PRINTLN(F("- x10 Message:"));
+  DEBUG_X10RF_PRINT(F("- x10 Message: "));
   for (byte i = 0; i < size; ++i)   {
     DEBUG_X10RF_PRINT(data[i] >> 4, HEX);
     DEBUG_X10RF_PRINT(data[i] & 0x0F, HEX);
@@ -236,10 +242,8 @@ void x10rf::SendCommand(uint8_t *data, uint8_t size) {
 
 void x10rf::SendX10RfByte(uint8_t data) {
   int i = 0;
-  //Serial.println("\n");
   for (int i = 7; i >= 0 ; i--) { // send bits from byte
     SendX10RfBit((bitRead(data, i) == 1));
-    //Serial.print(bitRead(data,i));
   }
 }
 

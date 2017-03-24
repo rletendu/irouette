@@ -15,7 +15,8 @@
 #ifndef x10rf_h
 #define x10rf_h
 
-#define X10RF_DEBUG
+//#define X10RF_DEBUG
+
 // Setup debug printing macros.
 #ifdef X10RF_DEBUG
 // Define where debug output will be printed.
@@ -46,12 +47,14 @@ class x10rf
   public:
     x10rf(uint8_t tx_pin, uint8_t led_pin, uint8_t rf_repeats);
     void begin();
+    void x10Security(uint8_t address, uint8_t command);
+    void send_temperature(uint8_t rfxm_address, float temperature);
+    void send_meter(uint8_t rfxm_address, long value);
+    void send_switch(char house_code, uint8_t unit_code, enum x10_switch_cmd command);
+  private:
     void RFXmeter(uint8_t rfxm_address, uint8_t rfxm_packet_type, long rfxm_value);
     void RFXsensor(uint8_t rfxs_address, uint8_t rfxs_type, char rfxs_packet_type, uint8_t rfxs_value);
     void x10Switch(char house_code, uint8_t unit_code, enum x10_switch_cmd command);
-    void x10Security(uint8_t address, uint8_t command);
-    void send_temperature(uint8_t rfxm_address, float temperature);
-  private:
     void SendX10RfByte(uint8_t data);
     void SendX10RfBit(unsigned int databit);
     void SendCommand(uint8_t *date, uint8_t size);
