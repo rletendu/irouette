@@ -39,17 +39,16 @@ class Oregon
     void setHumidity(byte hum);
     void setPressure(float pres);
     int Sum(byte count);
-    inline void sendZero(void);
-    inline void sendOne(void);
+    void sendZero(void);
+    void sendOne(void);
     void sendOregon(void);
-    inline void sendQuarterLSB(const byte data);
-    inline void sendQuarterMSB(const byte data);
-    inline void sendPreamble(void);
-    inline void sendPostamble(void);
-    
-    
+    void sendQuarterLSB(const byte data);
+    void sendQuarterMSB(const byte data);
 
-    
+
+
+
+
 };
 
 // Very Scrappy way to add modules in arduino subfolder ...

@@ -8,16 +8,6 @@
 #define RF_BIT_TIME  512
 #define RF_2BIT_TIME  2*RF_BIT_TIME
 
-/*
-  void setTemperature(float temp);
-  void calculateAndSetChecksum(void);
-  void sendMessage();
-  void setHumidity(byte hum);
-  void setPressure(float pres);
-  int Sum(byte count);
-  void calculateAndSetChecksum();
-  inline void sendZero(void);
-*/
 Oregon::Oregon(void)
 {
 
@@ -77,7 +67,7 @@ void Oregon::send_temperature_hum(uint8_t ch, uint8_t id, float temperature, byt
 
 void Oregon::sendMessage()
 {
-  DEBUG_OREGON_PRINTLN(F("- RF Message:"));
+  DEBUG_OREGON_PRINTLN(F("- Oregon Message:"));
   for (byte i = 0; i < OregonMessageSize; ++i)   {
     DEBUG_OREGON_PRINT(OregonMessage[i] >> 4, HEX);
     DEBUG_OREGON_PRINT(OregonMessage[i] & 0x0F, HEX);
@@ -183,7 +173,7 @@ void Oregon::calculateAndSetChecksum()
    \         of the RF signal at the middle of a clock period.
    \         Remenber, the Oregon v2.1 protocol add an inverted bit first
 */
-inline  void Oregon::sendZero(void)
+void Oregon::sendZero(void)
 {
   SEND_HIGH();
   delayMicroseconds(RF_BIT_TIME);
@@ -199,7 +189,7 @@ inline  void Oregon::sendZero(void)
    \         of the RF signal at the middle of a clock period.
    \         Remenber, the Oregon v2.1 protocol add an inverted bit first
 */
-inline void Oregon::sendOne(void)
+void Oregon::sendOne(void)
 {
   SEND_LOW();
   delayMicroseconds(RF_BIT_TIME);
@@ -219,7 +209,7 @@ inline void Oregon::sendOne(void)
    \brief    Send a bits quarter (4 bits = MSB from 8 bits value) over RF
    \param    data   Data to send
 */
-inline void Oregon::sendQuarterMSB(const byte data)
+void Oregon::sendQuarterMSB(const byte data)
 {
   (bitRead(data, 4)) ? sendOne() : sendZero();
   (bitRead(data, 5)) ? sendOne() : sendZero();
@@ -231,7 +221,7 @@ inline void Oregon::sendQuarterMSB(const byte data)
    \brief    Send a bits quarter (4 bits = LSB from 8 bits value) over RF
    \param    data   Data to send
 */
-inline void Oregon::sendQuarterLSB(const byte data)
+void Oregon::sendQuarterLSB(const byte data)
 {
   (bitRead(data, 0)) ? sendOne() : sendZero();
   (bitRead(data, 1)) ? sendOne() : sendZero();
@@ -246,34 +236,18 @@ inline void Oregon::sendQuarterLSB(const byte data)
 */
 void Oregon::sendOregon(void)
 {
-  sendPreamble();
+  //sendPreamble();
+  sendQuarterLSB(0xFF);
+  sendQuarterMSB(0xFF);
+  sendQuarterLSB(0xFF);
+  sendQuarterMSB(0xFF);
+
   for (byte i = 0; i < OregonMessageSize; ++i)
   {
     sendQuarterLSB(OregonMessage[i]);
     sendQuarterMSB(OregonMessage[i]);
   }
-  sendPostamble();
-}
-
-/**
-   \brief    Send preamble
-   \details  The preamble consists of 16 "1" bits
-*/
-inline void Oregon::sendPreamble(void)
-{
-  sendQuarterLSB(0xFF);
-  sendQuarterMSB(0xFF);
-  sendQuarterLSB(0xFF);
-  sendQuarterMSB(0xFF);
-
-}
-
-/**
-   \brief    Send postamble
-   \details  The postamble consists of 8 "0" bits
-*/
-inline void Oregon::sendPostamble(void)
-{
+  //sendPostamble();
   if (OregonMessageSize == 8) {
     sendQuarterLSB(0x00);
   } else {
@@ -281,6 +255,8 @@ inline void Oregon::sendPostamble(void)
     sendQuarterMSB(0x00);
   }
 }
+
+
 
 /*
 
