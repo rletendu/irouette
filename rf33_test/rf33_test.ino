@@ -1,43 +1,117 @@
 #include "oregon.hpp"
-#include <x10rf.h>
+
+//#define X10
+
+#ifdef X10
+#include "x10rf.h"
+#endif
+
+// #define DEBUG
+
+#ifdef DEBUG
+#ifndef DEBUG_PRINTER
+#define DEBUG_PRINTER Serial
+#endif
+#define DEBUG_PRINT(...) { DEBUG_PRINTER.print(__VA_ARGS__); }
+#define DEBUG_PRINTLN(...) { DEBUG_PRINTER.println(__VA_ARGS__); }
+#else
+#define DEBUG_PRINT(...) {}
+#define DEBUG_PRINTLN(...) {}
+#endif
 
 #define BP_PIN 2
-
 #define TX_PIN 10
+#define DS18B20_PIN 3
+
+#include <OneWire.h>
+#include <DallasTemperature.h>
+OneWire oneWire(DS18B20_PIN);
+DallasTemperature DS18B20(&oneWire);
+
+bool update_ds18b20_temperature(float *temp)
+{
+  float t, t2;
+  oneWire.reset();
+  DS18B20.begin();
+  DS18B20.setWaitForConversion(true);
+  DS18B20.requestTemperatures();
+  if (DS18B20.getDeviceCount() > 1 ) {
+    t = DS18B20.getTempCByIndex(0);
+    t2 = DS18B20.getTempCByIndex(1);
+    DEBUG_PRINT("DS18B20 Temperature 2: "); DEBUG_PRINTLN(t2, 2);
+  } else {
+    t = DS18B20.getTempCByIndex(0);
+  }
+  pinMode(DS18B20_PIN, OUTPUT);
+  digitalWrite(DS18B20_PIN, LOW);
+  if (isnan(t)) {
+    DEBUG_PRINTLN("Failed reading DS18B20!");
+    return false;
+  }
+  DEBUG_PRINT("DS18B20 Temperature: "); DEBUG_PRINTLN(t, 2);
+  *temp = t;
+}
+
+
 Oregon rf_sender = Oregon();
-x10rf myx10 = x10rf(TX_PIN,0,1);
-byte old=HIGH;
+#ifdef X10
+x10rf myx10 = x10rf(TX_PIN, 0, 1);
+#endif
+byte old = HIGH;
 
 void setup()
 {
-  pinMode(BP_PIN,INPUT_PULLUP);
+  float temperature;
+  pinMode(BP_PIN, INPUT_PULLUP);
+#ifdef DEBUG
   Serial.begin(9600);
+  delay(3000);
+  DEBUG_PRINTLN(F("RF Sender test"));
+  delay(3000);
+#endif
   rf_sender.begin(TX_PIN);
+
+
+
+  temperature = 18.5;
+  DEBUG_PRINT("Tx Temperature Oregon "); DEBUG_PRINTLN(temperature);
+  rf_sender.send_temperature(0x20, 0xCB, temperature, 1);
+
+#ifdef X10
   myx10.begin();
-  Serial.println("Tx Temperature");
-  rf_sender.send_temperature(0x20, 0xCB, 11.2, 1);
+  temperature = 19.5;
+  DEBUG_PRINT("Tx Temperature x10RF "); DEBUG_PRINTLN(temperature);
+  myx10.send_temperature(0, temperature);
+  DEBUG_PRINTLN("Tx B 4 OFF");
+  myx10.send_switch('B', 4, OFF);
+  DEBUG_PRINTLN("Tx B 4 ON");
+  myx10.send_switch('B', 4, ON);
+#endif
 
 }
 
 void loop()
 {
+  float temperature;
   byte state;
   delay(100);
+#ifdef X10
   state = digitalRead(BP_PIN);
   if (state != old) {
-    Serial.print("Tx BP:");Serial.println(state);
+    DEBUG_PRINT("Tx BP:"); DEBUG_PRINTLN(state);
     if (state == HIGH) {
-     myx10.x10Switch('B',4, OFF); 
+      myx10.send_switch('B', 4, OFF);
     } else {
-      myx10.x10Switch('B',4, ON); 
+      myx10.send_switch('B', 4, ON);
     }
   }
   old = state;
+#endif
+  update_ds18b20_temperature(&temperature);
 
- 
   /*
-  rf_sender.send_temperature_hum(0x20, 0xCB, 11.2, 52,1);
-  delay(3000);
+    rf_sender.send_temperature_hum(0x20, 0xCB, 11.2, 52,1);
+    delay(3000);
   */
 }
 
@@ -79,7 +153,7 @@ void setup() {
   PCMSK |= _BV(PCINT2);                   // Use PB3 as interrupt pin
   ADCSRA &= ~_BV(ADEN);                   // ADC off
 
-  if(ledpin > 0) {
+  if (ledpin > 0) {
     for (int k = 0; k < 8; k = k + 1) {
       digitalWrite(ledpin, !digitalRead(ledpin));   // Run a blink sequence to show the circuit lives on boot
       delay(100);
@@ -109,7 +183,7 @@ void resetWatchdog ()
 {
   MCUSR = 0;                                                  // clear various "reset" flags
   WDTCR = bit (WDCE) | bit (WDE) | bit (WDIF);                // allow changes, disable reset, clear existing interrupt
-                                               // set interrupt mode and an interval (WDE must be changed from 1 to 0 here)
+  // set interrupt mode and an interval (WDE must be changed from 1 to 0 here)
   WDTCR = bit (WDIE) | bit (WDP2) | bit (WDP1) | bit (WDP0);  // set WDIE, and 2 seconds delay
   wdt_reset();                                                // pat the dog
 }  // end of resetWatchdog
