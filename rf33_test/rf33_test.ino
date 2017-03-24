@@ -27,9 +27,9 @@ void loop()
   if (state != old) {
     Serial.print("Tx BP:");Serial.println(state);
     if (state == HIGH) {
-     myx10.x10Switch('B',4, 1); 
+     myx10.x10Switch('B',4, OFF); 
     } else {
-      myx10.x10Switch('B',4, 0); 
+      myx10.x10Switch('B',4, ON); 
     }
   }
   old = state;
