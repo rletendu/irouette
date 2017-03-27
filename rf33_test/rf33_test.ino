@@ -1,12 +1,13 @@
 #include "oregon.hpp"
 
-//#define X10
+#define X10
 
 #ifdef X10
 #include "x10rf.h"
+//#include <x10rf.h>
 #endif
 
-// #define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #ifndef DEBUG_PRINTER
@@ -55,7 +56,7 @@ bool update_ds18b20_temperature(float *temp)
 
 Oregon rf_sender = Oregon();
 #ifdef X10
-x10rf myx10 = x10rf(TX_PIN, 0, 1);
+x10rf myx10 = x10rf(TX_PIN, 0, 5);
 #endif
 byte old = HIGH;
 
@@ -73,7 +74,7 @@ void setup()
 
 
 
-  temperature = 18.5;
+  temperature = 21.2;
   DEBUG_PRINT("Tx Temperature Oregon "); DEBUG_PRINTLN(temperature);
   rf_sender.send_temperature(0x20, 0xCB, temperature, 1);
 
@@ -86,6 +87,9 @@ void setup()
   myx10.send_switch('B', 4, OFF);
   DEBUG_PRINTLN("Tx B 4 ON");
   myx10.send_switch('B', 4, ON);
+  delay(100);
+  DEBUG_PRINTLN("Tx Meter info");
+  myx10.send_meter(12, 75123);
 #endif
 
 }
@@ -107,7 +111,7 @@ void loop()
   }
   old = state;
 #endif
-  update_ds18b20_temperature(&temperature);
+  //update_ds18b20_temperature(&temperature);
 
   /*
     rf_sender.send_temperature_hum(0x20, 0xCB, 11.2, 52,1);
