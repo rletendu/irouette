@@ -46,6 +46,27 @@ void Oregon::send_temperature(uint8_t ch, uint8_t id, float temperature, byte ba
   sendMessage();
 }
 
+
+void Oregon::send_temperature_from_ds18(uint8_t ch, uint8_t id, int temperature, byte battery)
+{
+  DEBUG_OREGON_PRINTLN(F("- Sending temperature from DS18 raw"));
+  OregonMessageSize = 8;
+  // Set type
+  OregonMessage[0] = 0xEA;
+  OregonMessage[1] = 0x4C;
+  // Channel
+  OregonMessage[2] = ch;
+  // Id
+  OregonMessage[3] = id;
+  // Battery info
+  if (!battery) OregonMessage[4] = 0x0C;
+  else OregonMessage[4] = 0x00;
+  setTemperature_ds18(temperature);
+  calculateAndSetChecksum();
+  sendMessage();
+}
+
+
 void Oregon::send_temperature_hum(uint8_t ch, uint8_t id, float temperature, byte hum, byte battery)
 {
   DEBUG_OREGON_PRINTLN(F("- Sending temperature & hum"));
@@ -71,6 +92,12 @@ void Oregon::sendMessage()
   for (byte i = 0; i < OregonMessageSize; ++i)   {
     DEBUG_OREGON_PRINT(OregonMessage[i] >> 4, HEX);
     DEBUG_OREGON_PRINT(OregonMessage[i] & 0x0F, HEX);
+  }
+  DEBUG_OREGON_PRINTLN();
+  DEBUG_OREGON_PRINTLN(F("- Oregon Message (reverse):"));
+  for (byte i = 0; i < OregonMessageSize; ++i)   {
+    DEBUG_OREGON_PRINT(OregonMessage[OregonMessageSize - i - 1] >> 4, HEX);
+    DEBUG_OREGON_PRINT(OregonMessage[OregonMessageSize - i - 1] & 0x0F, HEX);
   }
   DEBUG_OREGON_PRINTLN();
 
@@ -111,6 +138,44 @@ void Oregon::setTemperature(float temp)
   OregonMessage[5] |= tf;
   // Set temperature float part
   OregonMessage[4] |= (tempFloat << 4);
+}
+
+
+/*
+ * 
+ * 
+ * 
+uint8_t bcd2dec2(uint8_t n)
+{
+  return n - 6 * (n/16); 
+}
+*/
+uint8_t Oregon::dec2bcd2(uint8_t n)
+{
+  uint16_t a = n;
+  byte b = (a*103) >> 10;  // this equals:  b = a/10; 
+  return  n + b*6;
+}
+
+
+void Oregon::setTemperature_ds18(int16_t raw_temperature)
+{
+  // raw temperature input is in 1/128°C
+  int td;
+  if (raw_temperature < 0)
+  {
+    OregonMessage[6] = 0x08;
+    raw_temperature *= -1;
+  }
+  else
+  {
+    OregonMessage[6] = 0x00;
+  }
+  // Convert temperature in 1/10 of °C ( *10/128 )
+  raw_temperature = (10*raw_temperature)>>7;
+  td = raw_temperature /10;
+  OregonMessage[5] = dec2bcd2(td);
+  OregonMessage[4] |= dec2bcd2(raw_temperature-(10*td))<<4;
 }
 
 /**

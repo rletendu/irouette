@@ -4,6 +4,7 @@
 #include "Arduino.h"
 
 //#define OREGON_DEBUG
+
 // Setup debug printing macros.
 #ifdef OREGON_DEBUG
 // Define where debug output will be printed.
@@ -28,6 +29,7 @@ class Oregon
     void end(void);
     void send_temperature(uint8_t ch, uint8_t id, float temperature, byte battery);
     void send_temperature_hum(uint8_t ch, uint8_t id, float temperature, byte hum, byte battery);
+    void send_temperature_from_ds18(uint8_t ch, uint8_t id, int temperature, byte battery);
 
   private:
     byte OregonMessage[OREGON_MAX_MESSAGE_SIZE];
@@ -35,6 +37,8 @@ class Oregon
     byte OregonTxPin;
     void sendMessage(void);
     void setTemperature(float temp);
+    void setTemperature_ds18(int temp);
+    uint8_t dec2bcd2(uint8_t n);
     void calculateAndSetChecksum(void);
     void setHumidity(byte hum);
     void setPressure(float pres);
