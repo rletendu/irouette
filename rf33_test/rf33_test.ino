@@ -1,13 +1,14 @@
+#include "LowPower.h"
 #include "oregon.hpp"
 
-#define X10
+//#define X10
 
 #ifdef X10
 #include "x10rf.h"
 //#include <x10rf.h>
 #endif
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 #ifndef DEBUG_PRINTER
@@ -53,16 +54,36 @@ bool update_ds18b20_temperature(float *temp)
   *temp = t;
 }
 
+bool update_ds18b20_temperature_raw(int *temp)
+{
+  uint16_t t;
+  oneWire.reset();
+  DS18B20.begin();
+  DS18B20.setWaitForConversion(true);
+  DS18B20.requestTemperatures();
+  t = DS18B20.getTemp(0);
+  pinMode(DS18B20_PIN, OUTPUT);
+  digitalWrite(DS18B20_PIN, LOW);
+  if (t == 0xFFFF) {
+    DEBUG_PRINTLN("Failed reading DS18B20!");
+    return false;
+  }
+  DEBUG_PRINT("DS18B20 Temperature (1/128°C): "); DEBUG_PRINTLN(t);
+  *temp = t;
+}
 
 Oregon rf_sender = Oregon();
+
+
 #ifdef X10
 x10rf myx10 = x10rf(TX_PIN, 0, 5);
 #endif
+
 byte old = HIGH;
 
 void setup()
 {
-  float temperature;
+
   pinMode(BP_PIN, INPUT_PULLUP);
 #ifdef DEBUG
   Serial.begin(9600);
@@ -72,12 +93,12 @@ void setup()
 #endif
   rf_sender.begin(TX_PIN);
 
-
-
-  temperature = 21.2;
-  DEBUG_PRINT("Tx Temperature Oregon "); DEBUG_PRINTLN(temperature);
-  rf_sender.send_temperature(0x20, 0xCB, temperature, 1);
-
+  /*
+    float temperature = 25.5;
+    DEBUG_PRINT("Tx Temperature Oregon "); DEBUG_PRINTLN(temperature);
+    rf_sender.send_temperature(0x20, 0xCB, temperature, 1);
+  */
+  rf_sender.send_temperature_from_ds18(0x20, 0xCB, 25.5 * 128, 1);
 #ifdef X10
   myx10.begin();
   temperature = 19.5;
@@ -96,7 +117,8 @@ void setup()
 
 void loop()
 {
-  float temperature;
+  //float temperature;
+  int16_t temp;
   byte state;
   delay(100);
 #ifdef X10
@@ -112,6 +134,9 @@ void loop()
   old = state;
 #endif
   //update_ds18b20_temperature(&temperature);
+  update_ds18b20_temperature_raw(&temp);
+  rf_sender.send_temperature_from_ds18(0x20, 0xCB, temp, 1);
+  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF) ;
 
   /*
     rf_sender.send_temperature_hum(0x20, 0xCB, 11.2, 52,1);
