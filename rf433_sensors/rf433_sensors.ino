@@ -5,9 +5,9 @@
 #include "oregon/oregon.hpp"
 
 //#define X10
-
 #ifdef X10
-#include "x10rf.h"
+#define X10_SRC_INCLUDE
+#include "x10rf/x10rf.h"
 //#include <x10rf.h>
 #endif
 
