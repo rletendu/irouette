@@ -13,3 +13,6 @@
 [submodule "sample_node_avr/domoticz"]
 	path = sample_node_avr/domoticz
 	url = https://github.com/rletendu/domoticz
+[submodule "rf433_sensors/x10rf"]
+	path = rf433_sensors/x10rf
+	url = https://github.com/rletendu/x10rf
