@@ -8,7 +8,6 @@
 #ifdef X10
 #define X10_SRC_INCLUDE
 #include "x10rf/x10rf.h"
-//#include <x10rf.h>
 #endif
 
 //#define DEBUG
@@ -25,21 +24,22 @@
 #endif
 
 #define BP_PIN 2
-#define TX_PIN 10
-#define DS18B20_PIN 3
+#define TX_PIN 11
+#define DS18B20_PIN 9
 
-#include <OneWire.h>
-#include <DallasTemperature.h>
-OneWire oneWire(DS18B20_PIN);
-DallasTemperature DS18B20(&oneWire);
+#include "DallasTemperaturePu.h"
+DallasTemperature DS18B20(DS18B20_PIN);
 
 bool update_ds18b20_temperature(float *temp)
 {
   float t, t2;
-  oneWire.reset();
+  //oneWire.reset();
   DS18B20.begin();
   DS18B20.setWaitForConversion(true);
   DS18B20.requestTemperatures();
+  if ( DS18B20.getDeviceCount() == 0) {
+    DEBUG_PRINTLN("No Sensor Found");
+  }
   if (DS18B20.getDeviceCount() > 1 ) {
     t = DS18B20.getTempCByIndex(0);
     t2 = DS18B20.getTempCByIndex(1);
@@ -59,19 +59,25 @@ bool update_ds18b20_temperature(float *temp)
 
 bool update_ds18b20_temperature_raw(int *temp)
 {
+  DeviceAddress deviceAddress;
   uint16_t t;
-  oneWire.reset();
+  //oneWire.reset();
   DS18B20.begin();
   DS18B20.setWaitForConversion(true);
   DS18B20.requestTemperatures();
-  t = DS18B20.getTemp(0);
+  if ( DS18B20.getDeviceCount() == 0) {
+    DEBUG_PRINTLN("No Sensor Found");
+  }
+  DS18B20.getAddress(deviceAddress, 0);
+
+  t = DS18B20.getTemp((uint8_t*)deviceAddress);
   pinMode(DS18B20_PIN, OUTPUT);
   digitalWrite(DS18B20_PIN, LOW);
   if (t == 0xFFFF) {
     DEBUG_PRINTLN("Failed reading DS18B20!");
     return false;
   }
-  DEBUG_PRINT("DS18B20 Temperature (1/128°C): "); DEBUG_PRINTLN(t);
+  DEBUG_PRINT("DS18B20 Temperature (1/128C): "); DEBUG_PRINTLN(t);
   *temp = t;
 }
 
@@ -86,6 +92,11 @@ byte old = HIGH;
 
 void setup()
 {
+  digitalWrite( 8 , LOW );
+  pinMode( 8  , OUTPUT );
+  digitalWrite( 10 , LOW );
+  pinMode( 10 , OUTPUT );
+
 
   pinMode(BP_PIN, INPUT_PULLUP);
 #ifdef DEBUG
@@ -95,12 +106,6 @@ void setup()
   delay(3000);
 #endif
   rf_sender.begin(TX_PIN);
-
-  /*
-    float temperature = 25.5;
-    DEBUG_PRINT("Tx Temperature Oregon "); DEBUG_PRINTLN(temperature);
-    rf_sender.send_temperature(0x20, 0xCB, temperature, 1);
-  */
   rf_sender.send_temperature_from_ds18(0x20, 0xCB, 25.5 * 128, 1);
 #ifdef X10
   myx10.begin();
