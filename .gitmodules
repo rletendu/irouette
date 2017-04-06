@@ -19,3 +19,6 @@
 [submodule "rf433_sensors/oregon"]
 	path = rf433_sensors/oregon
 	url = https://github.com/rletendu/oregon
+[submodule "rf433_temperature/oregon"]
+	path = rf433_temperature/oregon
+	url = https://github.com/rletendu/oregon
