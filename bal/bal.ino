@@ -133,6 +133,14 @@ void back_door_interupt() {
   }
 }
 
+void back_door_interupt() {
+  time = millis();
+  if ( abs(time-time_last_mail_update) > MIN_TIME_MAIL_REFRESH_MS ) { 
+    count_mail = 0;
+    send_mail_count_update();
+  }
+}
+
 
 void setup()
 {
