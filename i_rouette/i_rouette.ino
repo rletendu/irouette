@@ -109,9 +109,7 @@ void setup() {
   if ( rtc_time.year < 2016) {
     DEBUG_PRINTLN(F("RTC Time Error"));
     beep(10, true);
-    LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
-  }
-  if (0) {
+    
     DEBUG_PRINTLN(F("Time not setup!"));
     rtc_time.year = 2016;
     rtc_time.mon = 8;
@@ -121,6 +119,8 @@ void setup() {
     rtc_time.sec = 0;
     rtc_set_time(&rtc_time);
     rtc_get_time(&rtc_time);
+    LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+
   }
   vcc_sensor_enable(false);
   rtc_wake = true; // Force rtc wake for first loop

@@ -10,3 +10,21 @@
 [submodule "i_rouette_esp/domoticz"]
 	path = i_rouette_esp/domoticz
 	url = https://github.com/rletendu/domoticz
+[submodule "sample_node_avr/domoticz"]
+	path = sample_node_avr/domoticz
+	url = https://github.com/rletendu/domoticz
+[submodule "rf433_sensors/x10rf"]
+	path = rf433_sensors/x10rf
+	url = https://github.com/rletendu/x10rf
+[submodule "rf433_sensors/oregon"]
+	path = rf433_sensors/oregon
+	url = https://github.com/rletendu/oregon
+[submodule "rf433_temperature/oregon"]
+	path = rf433_temperature/oregon
+	url = https://github.com/rletendu/oregon
+[submodule "bal/oregon"]
+	path = bal/oregon
+	url = https://github.com/rletendu/oregon
+[submodule "bal/x10rf"]
+	path = bal/x10rf
+	url = https://github.com/rletendu/x10rf
