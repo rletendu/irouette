@@ -1,5 +1,8 @@
 #include "LowPower.h"
+
+#ifdef USE_ENABLE_INTERRUPT
 #include <EnableInterrupt.h>
+#endif
 #include "DallasTemperaturePu.h"
 #include <EEPROM.h>
 
@@ -13,8 +16,11 @@
 #define X10_SRC_INCLUDE
 #include "x10rf/x10rf.h"
 #endif
-
-//#define DEBUG
+#if defined __AVR_ATtiny85__
+#undef DEBUG
+#else
+#define DEBUG
+#endif
 #ifdef DEBUG
 #ifndef DEBUG_PRINTER
 #define DEBUG_PRINTER Serial
@@ -35,9 +41,16 @@
 // Pins allocation
 #define TX_POWER_PIN               4
 #define TX_DATA_PIN                3
+#if defined __AVR_ATtiny85__
 #define DS18B20_PIN                0
 #define FRONT_DOOR_PIN             1
+#define FRONT_DOOR_PC              1
+#else
+#define DS18B20_PIN                5
+#define FRONT_DOOR_PIN             6
+#endif
 #define BACK_DOOR_PIN              2
+#define BACK_DOOR_PC               2
 
 #define TEMPERATURE_WAKEUP_TIME    20 // Temperature update period in minutes
 #define MIN_TIME_MAIL_REFRESH_MS   100
@@ -64,6 +77,21 @@ char mail_unit_code = MAIL_UNIT_CODE;
 
 uint8_t temperature_channel = TEMPERATURE_CHANNEL;
 uint8_t temperature_id = TEMPERATURE_ID;
+
+#define NOTIFY_BACK 3
+#define NOTIFY_FRONT 2
+
+
+void notify(uint8_t cnt)
+{
+  uint8_t i;
+  for (i = 0; i < cnt; i++) {
+    radio_power_on();
+    delay(500);
+     radio_power_off();
+    delay(500);
+  }
+}
 
 void radio_power_on(void)
 {
@@ -105,6 +133,8 @@ bool update_ds18b20_temperature_raw(int *temp)
 
 void send_mail_count_update(void )
 {
+  DEBUG_PRINT(F("Mail update : "));
+  DEBUG_PRINTLN(count_mail);
   radio_power_on();
   // meter update
   myx10.send_meter(mail_meter_id, count_mail);
@@ -119,24 +149,61 @@ void send_mail_count_update(void )
 }
 
 void front_door_interupt() {
+  DEBUG_PRINTLN(F("Front Door ISR"));
   time = millis();
-  if ( abs(time - time_last_mail_update) > MIN_TIME_MAIL_REFRESH_MS ) {
+  notify(NOTIFY_FRONT);
+  //if ( abs(time - time_last_mail_update) > MIN_TIME_MAIL_REFRESH_MS ) {
+  {
     count_mail++;
     mail_update_request = true;
   }
+#ifdef USE_ENABLE_INTERRUPT
+  disableInterrupt(BACK_DOOR_PIN);
+#else
+
+#endif
 }
 void back_door_interupt() {
+  DEBUG_PRINTLN(F("Back Door ISR"));
   time = millis();
-  if ( abs(time - time_last_mail_update) > MIN_TIME_MAIL_REFRESH_MS ) {
+ 
+  // if ( abs(time - time_last_mail_update) > MIN_TIME_MAIL_REFRESH_MS ) {
+  {
     count_mail = 0;
     mail_update_request = true;
   }
+#ifdef USE_ENABLE_INTERRUPT
+  disableInterrupt(BACK_DOOR_PIN);
+#else
+
+#endif
+
 }
 
+ISR (PCINT0_vect)
+{
+  delay(100);
+  if (digitalRead(BACK_DOOR_PIN) == 0) {
+    notify(NOTIFY_BACK);
+    count_mail = 0;
+    mail_update_request = true;
+    return;
+  }
+  if (digitalRead(FRONT_DOOR_PIN) == 1) {
+     notify(NOTIFY_FRONT);
+    count_mail++;
+    mail_update_request = true;
+    return;
+  }
+}
 
 void setup()
 {
   uint8_t i;
+#ifdef DEBUG
+  DEBUG_PRINTER.begin(9600);
+  DEBUG_PRINTLN(F("Starting"));
+#endif
   i = EEPROM.read(EE_ADR_MAIL_METER_ID);
   if (i != 0xFF) {
     mail_meter_id = i;
@@ -154,12 +221,18 @@ void setup()
   // Back door mail box detection is micro swtich Normaly Open
   // Opening the door will close the switch
   pinMode( BACK_DOOR_PIN  , INPUT_PULLUP );
+#ifdef USE_ENABLE_INTERRUPT
   enableInterrupt(BACK_DOOR_PIN, back_door_interupt, FALLING);
+#else
+  PCMSK = (1 << BACK_DOOR_PC) | (1 << FRONT_DOOR_PC);
+  GIMSK = (1 << PCIE);
+#endif
   // Front door mail box detection is micro reelswtich Normaly Close
   // Opening the door will open the switch
   pinMode( FRONT_DOOR_PIN  , INPUT ); //! Caution no internal pull up, external one only !
+#ifdef USE_ENABLE_INTERRUPT
   enableInterrupt(FRONT_DOOR_PIN, front_door_interupt, RISING);
-
+#endif
   // Init Radio Vcc pin
   digitalWrite( TX_POWER_PIN , LOW );
   pinMode( TX_POWER_PIN  , OUTPUT );
@@ -182,7 +255,16 @@ void loop()
   if (mail_update_request) {
     send_mail_count_update();
     mail_update_request = false;
-    delay(MIN_TIME_MAIL_REFRESH_MS);
+    //delay(2 * MIN_TIME_MAIL_REFRESH_MS);
+#ifdef USE_ENABLE_INTERRUPT
+
+    enableInterrupt(BACK_DOOR_PIN, back_door_interupt, FALLING);
+    enableInterrupt(FRONT_DOOR_PIN, front_door_interupt, RISING);
+
+
+#else
+
+#endif
   }
   if (++wakeup_count >= WAKEUP_COUNT_TIME) {
     if (getVCC() >= MIN_VCC_OK_MV) {
@@ -198,6 +280,7 @@ void loop()
     wakeup_count = 0;
     radio_power_off();
   }
+
   LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF) ;
 }
 
