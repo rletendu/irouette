@@ -1,3 +1,6 @@
+[submodule "TV_receiver/domoticz"]
+	path = TV_receiver/domoticz
+	url = https://github.com/rletendu/domoticz
 [submodule "garage/domoticz"]
 	path = garage/domoticz
 	url = https://github.com/rletendu/domoticz
