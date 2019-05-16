@@ -1,0 +1,7 @@
+{
+    "jira-plugin.workingProject": "",
+    "terminal.integrated.env.linux": {
+        "PATH": "/home/raphael/.platformio/penv/bin:/home/raphael/.platformio/penv:/home/raphael/.local/bin:/home/raphael/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
+        "PLATFORMIO_CALLER": "vscode"
+    }
+}
