@@ -12,6 +12,11 @@
 #define ESP_EN_PIN 5
 #define DELAY_CONNECT 3000
 
+#define RXTIMEOUT 3000
+#define RX_ATTEMPT 3
+
+#define ACK_MESSAGE_LEN 3
+const char ack_message[ACK_MESSAGE_LEN + 1] = "ACK";
 volatile bool mail_update_request = true;
 volatile uint16_t count_mail = 0;
 unsigned long time;
@@ -39,26 +44,62 @@ int getVCC()
   return ((long)1024 * 1100) / val;
 }
 
-bool send_mail_count_update()
+bool receive_ack()
+{
+  uint8_t idx = 0;
+  char rx_char;
+  unsigned long timeout = millis() + RXTIMEOUT;
+
+  while (idx < ACK_MESSAGE_LEN)
+  {
+    if (millis() > timeout)
+    {
+      return false;
+      break;
+    }
+    if (ESP_Serial.available())
+    {
+      rx_char = ESP_Serial.read();
+      if (rx_char == ack_message[idx])
+      {
+        idx++;
+      }
+      else
+      {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+void send_mail_count_update()
 {
   int vcc;
-
-  ESP_Enable();
+  uint8_t attempt = 0;
   vcc = getVCC();
-  delay(DELAY_CONNECT);
-  
-  ESP_Serial.print("{MAIL:");
-  ESP_Serial.print(count_mail);
-  ESP_Serial.print(",BAT:");
-  ESP_Serial.print(vcc);
-  ESP_Serial.print("}");
+  bool status = false;
 
-  if (ESP_Serial.available())
+  while (attempt < RX_ATTEMPT)
   {
-    ESP_Serial.read();
+    ESP_Enable();
+    delay(DELAY_CONNECT * attempt);
+    ESP_Serial.print("{MAIL:");
+    ESP_Serial.print(count_mail);
+    ESP_Serial.print(",BAT:");
+    ESP_Serial.print(vcc);
+    ESP_Serial.print("}");
+    ESP_Serial.listen();
+    status = receive_ack();
+    ESP_Serial.stopListening();
+    ESP_Disable();
+    if (status)
+    {
+      status = true;
+    }
+    delay(100);
+    attempt++;
   }
-
-  ESP_Disable();
 }
 
 void UserPCINT0_vect()
@@ -94,6 +135,7 @@ void setup()
   pinMode(ESP_EN_PIN, OUTPUT);
 
   ESP_Serial.begin(ESP_SERIAL_BAUD);
+  ESP_Serial.stopListening();
 }
 
 void loop()
@@ -103,5 +145,5 @@ void loop()
     send_mail_count_update();
     mail_update_request = false;
   }
-  // put your main code here, to run repeatedly:
+  LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
 }
