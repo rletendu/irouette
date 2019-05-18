@@ -25,6 +25,8 @@ SoftwareSerialCustom ESP_Serial = SoftwareSerialCustom(RX_PIN, TX_PIN);
 
 #define ESP_Enable() digitalWrite(ESP_EN_PIN, HIGH)
 #define ESP_Disable() digitalWrite(ESP_EN_PIN, LOW)
+#define Enable_Door_IT() PCMSK |= (1 << BACK_DOOR_PC) | (1 << FRONT_DOOR_PC)
+#define Disable_Door_IT() PCMSK &= ~((1 << BACK_DOOR_PC) | (1 << FRONT_DOOR_PC))
 
 int getVCC()
 {
@@ -104,17 +106,20 @@ void send_mail_count_update()
 
 void UserPCINT0_vect()
 {
-  if (digitalRead(BACK_DOOR_PIN) == 0)
+  if (mail_update_request == 0)
   {
-    count_mail = 0;
-    mail_update_request = true;
-    return;
-  }
-  if (digitalRead(FRONT_DOOR_PIN) == 1)
-  {
-    count_mail++;
-    mail_update_request = true;
-    return;
+    if (digitalRead(BACK_DOOR_PIN) == 0)
+    {
+      count_mail = 0;
+      mail_update_request = true;
+      return;
+    }
+    if (digitalRead(FRONT_DOOR_PIN) == 1)
+    {
+      count_mail++;
+      mail_update_request = true;
+      return;
+    }
   }
 }
 
@@ -125,7 +130,7 @@ void setup()
   // Opening the door will close the switch
   pinMode(BACK_DOOR_PIN, INPUT_PULLUP);
 
-  PCMSK |= (1 << BACK_DOOR_PC) | (1 << FRONT_DOOR_PC);
+  Enable_Door_IT();
   GIMSK |= (1 << PCIE);
   // Front door mail box detection is micro reelswtich Normaly Close
   // Opening the door will open the switch
@@ -142,8 +147,10 @@ void loop()
 {
   if (mail_update_request)
   {
+    Disable_Door_IT();
     send_mail_count_update();
     mail_update_request = false;
+    Enable_Door_IT();
   }
   LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
 }
