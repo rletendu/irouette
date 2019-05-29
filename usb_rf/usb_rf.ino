@@ -3,16 +3,25 @@
 
 RCSwitch rf = RCSwitch();
 
-#define LED_PIN 0
-#define VCC_PIN 13
-#define TX_PIN 14
+#define LED_PIN 0         // PB0
+#define VCC_TX_PIN 13     // PD0
+#define TX_PIN     14     // PD1
+
+#define VCC_RX_PIN 12     // PC2
+#define RX_PIN     11     // PC4
 
 void setup() {
   // put your setup code here, to run once:
+  digitalWrite(VCC_TX_PIN, 0);
+  digitalWrite(VCC_RX_PIN, 0);
+  
   pinMode(LED_PIN, OUTPUT);
-  pinMode(VCC_PIN, OUTPUT);
+  pinMode(VCC_TX_PIN, OUTPUT);
+  pinMode(VCC_RX_PIN, OUTPUT);
   pinMode(TX_PIN, OUTPUT);
-  digitalWrite(VCC_PIN, 1);
+  pinMode(RX_PIN, INPUT);
+  
+  digitalWrite(VCC_TX_PIN, 1);
   Serial.begin(115200);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB
